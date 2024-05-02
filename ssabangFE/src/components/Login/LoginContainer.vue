@@ -34,11 +34,11 @@ export default {
 <style scoped>
 .login-button {
   width: 100%;
-  heigth: 5vh;
+  height: 5vh;
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #6366f1;
+  background-color: #2462B9; /* 변경 */
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -50,7 +50,7 @@ export default {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: green;
+  background-color: #484854; /* 변경 */
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -89,22 +89,10 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('@/assets/loginImage.jpg'); /* 배경 이미지 */
-  background-size: cover;
-  background-position: center;
+  background-color: #CAE5FF; /* 변경 */
   opacity: 0.5; /* 이미지의 투명도 (이미지를 보이게 하기 위해 적당한 투명도 선택) */
 }
 
-.login-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
-  z-index: 1; /* 이미지 위에 표시되도록 z-index 설정 */
-}
 .input-container {
   position: relative;
   display: flex;
@@ -115,7 +103,6 @@ export default {
 
   padding: 3%;
   border-radius: 1%;
-  z-index: 2; /* 최상위 레이어로 설정 */
 }
 
 .button-group {

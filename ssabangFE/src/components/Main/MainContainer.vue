@@ -102,7 +102,7 @@
           <div>실거래정보</div>
         </div>
         <div>
-          <div class="list-between2" v-for="(info, index) in infomation">
+          <div class="list-between2" v-for="(info, index) in infomation.total">
             <div>{{ info.dealDate }}</div>
             <div class="column-left">
               <div class="price">매매가 {{ info.dealAmount }}</div>
@@ -119,6 +119,7 @@
 import GoogleChart from './Chart'
 import { searchKeyword, getApartmentData, getDongMarker, getGuMarker } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
+import { calculateMonthlyAverage } from './changSection'
 export default {
   name: 'MainContainer',
   data() {
@@ -128,7 +129,19 @@ export default {
       searchKeyword: '',
       deals: [],
       deal: {},
-      infomation: [],
+      
+      infomation: {
+        areaSize: 0,
+        hasOneYear: false,
+        hasThreeYear: false,
+        areas: [],
+        total: [],
+        oneYear: [],
+        threeYear: []
+      },
+      tempDeal : [], // 구간 deals
+      tempYear : -1, // 구간 year
+
       areas: [],
       highPrice: '',
       lowPrice: '',
@@ -229,7 +242,7 @@ export default {
       this.inputTimer = setTimeout(() => {
         this.searchKeyword = value
         this.fetchDealsData()
-      }, 300) // 디바운스 시간은 필요에 따라 조정
+      }, 1000) // 디바운스 시간은 필요에 따라 조정
     },
     async handleApartment(deal) {
       try {
@@ -238,29 +251,53 @@ export default {
         } else if (deal.dongCode) {
         }
 
-        console.log(this.infomation)
-        this.deal = deal
+
+        
+        this.deal = deal;
         let high = Number.MIN_SAFE_INTEGER
         let low = Number.MAX_SAFE_INTEGER
         let totalArea = 0
         let totalPrice = 0
-        const tempArea = new Set()
-        this.chartData = []
-        for (let info of this.infomation) {
+        this.chartData = [];
+        if(this.tempYear = -1){
+          
+          this.chartData = calculateMonthlyAverage(this.infomation.total)
+          this.tempDeal = this.infomation.total;
+        } else if(this.tempYear == 1) {
+          this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
+          this.tempDeal = this.infomation.oneYear;
+        } else if(this.tempYear == 3) {
+          this.chartData = calculateMonthlyAverage(this.infomation.threeYear)
+          this.tempDeal = this.infomation.threeYear;
+        }
+
+        // 정렬 확인
+        // console.log("차트데이터확인>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.",this.chartData)
+
+        for (let info of this.tempDeal) {
           const dealAmountNumeric = parseInt(info.dealAmount.replace(/,/g, ''), 10) * 10000
-          tempArea.add(info.area)
           totalArea += Number(info.area)
           totalPrice += dealAmountNumeric
-          info.dealAmount = formatToKoreanCurrency(dealAmountNumeric)
-          this.chartData.push([parseDate(info.dealDate), dealAmountNumeric])
           if (high < dealAmountNumeric) high = dealAmountNumeric
           if (low > dealAmountNumeric) low = dealAmountNumeric
         }
 
         this.chartData.sort((a, b) => b[0] - a[0]).reverse()
         this.chartData.unshift(['Month', '실거래가'])
-        this.areas = Array.from(tempArea).sort((a, b) => a - b)
+        this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
         this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
+        
+
+        this.highPrice = formatToKoreanCurrency(high)
+        this.lowPrice = formatToKoreanCurrency(low)
+
+        const content = `
+          <div class="overlay-info">
+            <h4>${deal.name}</h4>
+            <p>매매 가격: ${this.lowPrice} ~ ${this.highPrice}</p>
+          </div>
+        `
+
         // 지도 중심을 업데이트하는 로직 추가
         if (this.map && deal.lat && deal.lng) {
           this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
@@ -277,16 +314,6 @@ export default {
           if (this.overlay) {
             this.overlay.setMap(null) // 기존 오버레이 제거
           }
-
-          this.highPrice = formatToKoreanCurrency(high)
-          this.lowPrice = formatToKoreanCurrency(low)
-
-          const content = `
-        <div class="overlay-info">
-          <h4>${deal.name}</h4>
-          <p>매매 가격: ${this.lowPrice} ~ ${this.highPrice}</p>
-        </div>
-      `
 
           this.overlay = new kakao.maps.CustomOverlay({
             map: this.map,
