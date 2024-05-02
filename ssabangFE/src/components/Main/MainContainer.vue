@@ -68,7 +68,7 @@
           class="deal-item"
           @click="handleApartment(deal)"
         >
-          {{ deal.type }} - {{ deal.name }}
+          @{{ deal.type }} - {{ deal.keyword }}
         </div>
       </div>
     </div>
@@ -78,10 +78,7 @@
     </div>
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">{{ deal.apartmentName }}</div>
-      <!-- <div>
-        <div>신사동</div>
-        <div>9 단지 · 770 세대</div>
-      </div> -->
+
       <div class="flex">
         <div class="apt-size">전체</div>
         <div class="apt-size" v-for="(area, index) in areas">{{ area }}㎡</div>
@@ -120,7 +117,7 @@
 
 <script>
 import GoogleChart from './Chart'
-import { searchByApartName, searchByDongName, getApartmentData } from '@/api/apartmentAPI'
+import { searchKeyword, getApartmentData } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 export default {
   name: 'MainContainer',
@@ -167,7 +164,11 @@ export default {
     },
     async handleApartment(deal) {
       try {
-        this.infomation = await getApartmentData(deal.aptCode)
+        if (deal.aptCode) {
+          this.infomation = await getApartmentData(deal.aptCode)
+        } else if (deal.dongCode) {
+        }
+
         console.log(this.infomation)
         this.deal = deal
         let high = Number.MIN_SAFE_INTEGER
@@ -235,15 +236,8 @@ export default {
         console.log(this.searchKeyword)
         if (this.searchKeyword.trim() !== '') {
           // 각 함수의 결과를 개별적으로 받아옵니다.
-          const dongResults = (await searchByDongName(this.searchKeyword)).map((e) => {
-            return { ...e, name: e.address, type: '@동검색' } // 객체의 각 요소에 "type": "dong"을 추가
-          })
-
-          const apartResults = (await searchByApartName(this.searchKeyword)).map((e) => {
-            return { ...e, name: e.apartmentName, type: '@아파트검색' } // 객체의 각 요소에 "type": "dong"을 추가
-          })
-
-          this.deals = [...dongResults, ...apartResults]
+          this.deals = await searchKeyword(this.searchKeyword)
+          this.deals.reverse()
         }
       } catch (error) {
         console.error('Error fetching deals:', error)
@@ -258,6 +252,13 @@ export default {
       }
 
       this.map = new kakao.maps.Map(mapContainer, mapOption)
+
+      kakao.maps.event.addListener(this.map, 'dragend', () => {
+        const center = this.map.getCenter()
+        console.log('지도의 중심 좌표는 다음과 같습니다:', center.toString())
+        // 이곳에서 추가적인 API 호출을 실행하거나, 상태를 업데이트 할 수 있습니다.
+        // this.fetchDataBasedOnMapCenter(center) // 중심 좌표를 기반으로 데이터를 가져오는 함수 호출
+      })
     },
 
     searchPlace() {
