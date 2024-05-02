@@ -117,7 +117,7 @@
 
 <script>
 import GoogleChart from './Chart'
-import { searchKeyword, getApartmentData } from '@/api/apartmentAPI'
+import { searchKeyword, getApartmentData, getDongMarker, getGuMarker } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 export default {
   name: 'MainContainer',
@@ -144,16 +144,85 @@ export default {
         curveType: 'function',
         legend: { position: 'bottom' }
       },
-      chartType: 'LineChart'
+      chartType: 'LineChart',
+      markers: []
     }
   },
   mounted() {
     this.initMap()
+    this.displayMarkers()
+    kakao.maps.event.addListener(this.map, 'dragend', this.updateMarkers)
+    kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
   },
   components: {
     GoogleChart
   },
   methods: {
+    async displayMarkers() {
+      const markersData = await getDongMarker() // 마커 데이터를 로드하는 함수
+      this.clearMarkers() // 기존 마커 제거
+
+      markersData.forEach((data) => {
+        const position = new kakao.maps.LatLng(data.lat, data.lng)
+
+        const marker = new kakao.maps.Marker({
+          map: this.map,
+          position: position
+        })
+
+        const overlay = new kakao.maps.CustomOverlay({
+          content: `<div class="overlay-info">
+          <h4>${data.bjdong_nm}</h4>
+          <p>평균가: ${data.amount}만원</p>
+        </div>`,
+          map: this.map,
+          position: position,
+          yAnchor: 1.2
+        })
+
+        this.markers.push({ marker, overlay })
+      })
+    },
+
+    clearMarkers() {
+      this.markers.forEach((m) => {
+        m.marker.setMap(null)
+        m.overlay.setMap(null)
+      })
+      this.markers = []
+    },
+    async updateMarkers() {
+      this.clearMarkers() // 기존 마커 제거
+
+      // 지도의 현재 레벨에 따라 적절한 API 호출
+      const useDong = this.map.getLevel() < 6
+      const markersData = useDong ? await getDongMarker() : await getGuMarker()
+      console.log('Updated markers:', markersData)
+
+      markersData.forEach((data) => {
+        const position = new kakao.maps.LatLng(data.lat, data.lng)
+
+        const marker = new kakao.maps.Marker({
+          map: this.map,
+          position: position
+        })
+
+        // 조건에 따라 적절한 속성 이름 사용
+        const name = useDong ? data.bjdong_nm : data.sgg_nm
+        const overlay = new kakao.maps.CustomOverlay({
+          content: `<div class="overlay-info">
+        <h4>${name}</h4>
+        <p>평균가: ${data.amount}만원</p>
+      </div>`,
+          map: this.map,
+          position: position,
+          yAnchor: 1
+        })
+
+        this.markers.push({ marker, overlay })
+      })
+    },
+
     handleInput(event) {
       clearTimeout(this.inputTimer)
       const value = event.target.value
@@ -254,10 +323,12 @@ export default {
       this.map = new kakao.maps.Map(mapContainer, mapOption)
 
       kakao.maps.event.addListener(this.map, 'dragend', () => {
-        const center = this.map.getCenter()
-        console.log('지도의 중심 좌표는 다음과 같습니다:', center.toString())
-        // 이곳에서 추가적인 API 호출을 실행하거나, 상태를 업데이트 할 수 있습니다.
-        // this.fetchDataBasedOnMapCenter(center) // 중심 좌표를 기반으로 데이터를 가져오는 함수 호출
+        this.updateMarkers()
+      })
+
+      // 확대/축소 이벤트 리스너
+      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+        this.updateMarkers()
       })
     },
 
