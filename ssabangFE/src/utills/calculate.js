@@ -4,7 +4,7 @@ function formatToKoreanCurrency(value) {
 
   let formatted = ''
   if (billion > 0) formatted += `${billion}억 `
-  if (million > 0 || billion > 0) formatted += `${million}만원`
+  if (million > 0) formatted += `${million}만원`
   if (formatted === '') formatted = '0원'
 
   return formatted
