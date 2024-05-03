@@ -117,7 +117,13 @@
 
 <script>
 import GoogleChart from './Chart'
-import { searchKeyword, getApartmentData, getDongMarker, getGuMarker } from '@/api/apartmentAPI'
+import {
+  searchKeyword,
+  getApartmentData,
+  getDongMarker,
+  getGuMarker,
+  getDongData
+} from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 export default {
@@ -126,10 +132,12 @@ export default {
     return {
       map: null,
       marker: null,
+      dongMarkers: [],
+      guMarkers: [],
       searchKeyword: '',
       deals: [],
       deal: {},
-      
+
       infomation: {
         areaSize: 0,
         hasOneYear: false,
@@ -139,8 +147,8 @@ export default {
         oneYear: [],
         threeYear: []
       },
-      tempDeal : [], // 구간 deals
-      tempYear : -1, // 구간 year
+      tempDeal: [], // 구간 deals
+      tempYear: -1, // 구간 year
 
       areas: [],
       highPrice: '',
@@ -161,10 +169,12 @@ export default {
       markers: []
     }
   },
-  mounted() {
+  async mounted() {
     this.initMap()
+    this.dongMarkers = await getDongMarker()
+    this.guMarkers = await getGuMarker()
     this.displayMarkers()
-    kakao.maps.event.addListener(this.map, 'dragend', this.updateMarkers)
+    // kakao.maps.event.addListener(this.map, 'dragend', this.updateMarkers)
     kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
   },
   components: {
@@ -172,7 +182,7 @@ export default {
   },
   methods: {
     async displayMarkers() {
-      const markersData = await getDongMarker() // 마커 데이터를 로드하는 함수
+      const markersData = this.dongMarkers // 마커 데이터를 로드하는 함수
       this.clearMarkers() // 기존 마커 제거
 
       markersData.forEach((data) => {
@@ -190,7 +200,7 @@ export default {
         </div>`,
           map: this.map,
           position: position,
-          yAnchor: 1.2
+          yAnchor: 1
         })
 
         this.markers.push({ marker, overlay })
@@ -209,7 +219,8 @@ export default {
 
       // 지도의 현재 레벨에 따라 적절한 API 호출
       const useDong = this.map.getLevel() < 6
-      const markersData = useDong ? await getDongMarker() : await getGuMarker()
+      console.log(this.map.getLevel())
+      const markersData = useDong ? this.dongMarkers : this.guMarkers
       console.log('Updated markers:', markersData)
 
       markersData.forEach((data) => {
@@ -246,85 +257,121 @@ export default {
     },
     async handleApartment(deal) {
       try {
+        console.log(deal)
         if (deal.aptCode) {
           this.infomation = await getApartmentData(deal.aptCode)
-        } else if (deal.dongCode) {
-        }
 
+          this.deal = deal
+          let high = Number.MIN_SAFE_INTEGER
+          let low = Number.MAX_SAFE_INTEGER
+          let totalArea = 0
+          let totalPrice = 0
+          this.chartData = []
+          if ((this.tempYear = -1)) {
+            this.chartData = calculateMonthlyAverage(this.infomation.total)
+            this.tempDeal = this.infomation.total
+          } else if (this.tempYear == 1) {
+            this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
+            this.tempDeal = this.infomation.oneYear
+          } else if (this.tempYear == 3) {
+            this.chartData = calculateMonthlyAverage(this.infomation.threeYear)
+            this.tempDeal = this.infomation.threeYear
+          }
 
-        
-        this.deal = deal;
-        let high = Number.MIN_SAFE_INTEGER
-        let low = Number.MAX_SAFE_INTEGER
-        let totalArea = 0
-        let totalPrice = 0
-        this.chartData = [];
-        if(this.tempYear = -1){
-          
-          this.chartData = calculateMonthlyAverage(this.infomation.total)
-          this.tempDeal = this.infomation.total;
-        } else if(this.tempYear == 1) {
-          this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
-          this.tempDeal = this.infomation.oneYear;
-        } else if(this.tempYear == 3) {
-          this.chartData = calculateMonthlyAverage(this.infomation.threeYear)
-          this.tempDeal = this.infomation.threeYear;
-        }
+          // 정렬 확인
+          // console.log("차트데이터확인>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.",this.chartData)
 
-        // 정렬 확인
-        // console.log("차트데이터확인>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.",this.chartData)
+          for (let info of this.tempDeal) {
+            const dealAmountNumeric = parseInt(info.dealAmount.replace(/,/g, ''), 10) * 10000
+            totalArea += Number(info.area)
+            totalPrice += dealAmountNumeric
+            if (high < dealAmountNumeric) high = dealAmountNumeric
+            if (low > dealAmountNumeric) low = dealAmountNumeric
+          }
 
-        for (let info of this.tempDeal) {
-          const dealAmountNumeric = parseInt(info.dealAmount.replace(/,/g, ''), 10) * 10000
-          totalArea += Number(info.area)
-          totalPrice += dealAmountNumeric
-          if (high < dealAmountNumeric) high = dealAmountNumeric
-          if (low > dealAmountNumeric) low = dealAmountNumeric
-        }
+          this.chartData.sort((a, b) => b[0] - a[0]).reverse()
+          this.chartData.unshift(['Month', '실거래가'])
+          this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
+          this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
 
-        this.chartData.sort((a, b) => b[0] - a[0]).reverse()
-        this.chartData.unshift(['Month', '실거래가'])
-        this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
-        this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
-        
+          this.highPrice = formatToKoreanCurrency(high)
+          this.lowPrice = formatToKoreanCurrency(low)
 
-        this.highPrice = formatToKoreanCurrency(high)
-        this.lowPrice = formatToKoreanCurrency(low)
-
-        const content = `
-          <div class="overlay-info">
-            <h4>${deal.name}</h4>
+          const content = `
+          <div style="width:4px">
+            
             <p>매매 가격: ${this.lowPrice} ~ ${this.highPrice}</p>
           </div>
         `
 
-        // 지도 중심을 업데이트하는 로직 추가
-        if (this.map && deal.lat && deal.lng) {
-          this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
+          // 지도 중심을 업데이트하는 로직 추가
+          if (this.map && deal.lat && deal.lng) {
+            this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
 
-          if (this.marker) {
-            this.marker.setPosition(new kakao.maps.LatLng(deal.lat, deal.lng))
-          } else {
-            this.marker = new kakao.maps.Marker({
+            if (this.marker) {
+              this.marker.setPosition(new kakao.maps.LatLng(deal.lat, deal.lng))
+            } else {
+              this.marker = new kakao.maps.Marker({
+                position: new kakao.maps.LatLng(deal.lat, deal.lng),
+                map: this.map
+              })
+            }
+
+            if (this.overlay) {
+              this.overlay.setMap(null) // 기존 오버레이 제거
+            }
+
+            this.overlay = new kakao.maps.CustomOverlay({
+              map: this.map,
               position: new kakao.maps.LatLng(deal.lat, deal.lng),
-              map: this.map
+              content: content
+              // yAnchor: 1.5 // 마커 위에 표시하기 위해 조정
             })
           }
-
-          if (this.overlay) {
-            this.overlay.setMap(null) // 기존 오버레이 제거
-          }
-
-          this.overlay = new kakao.maps.CustomOverlay({
-            map: this.map,
-            position: new kakao.maps.LatLng(deal.lat, deal.lng),
-            content: content,
-            yAnchor: 1.5 // 마커 위에 표시하기 위해 조정
-          })
+        } else {
+          this.infomation = await getDongData(deal.keyword)
+          this.displayApartmentMarkers(this.infomation)
         }
       } catch (e) {
         console.error('Error fetching apartment data:', e)
       }
+    },
+
+    displayApartmentMarkers(apartmentData) {
+      this.clearMarkers() // 기존 마커 제거
+      apartmentData.forEach((data, index) => {
+        const position = new kakao.maps.LatLng(data.lat, data.lng)
+
+        const content = `<div style="width:auto; margin-bottom:5vh; background:white; padding: 1%;">
+          <div>${data.apartmentName} </div>
+          <div>${data.address} </div>
+     
+    </div>`
+
+        const marker = new kakao.maps.Marker({
+          map: this.map,
+          position: position
+        })
+
+        const overlay = new kakao.maps.CustomOverlay({
+          content: content,
+          map: this.map,
+          position: position,
+          yAnchor: 1,
+          zIndex: -1
+        })
+        // this.markers.push({ marker, overlay })
+
+        // 마커에 클릭 이벤트 리스너 추가
+        kakao.maps.event.addListener(marker, 'click', () => {
+          this.handleApartment(data)
+        })
+
+        // 첫 번째 마커에서 지도 중심을 이동
+        if (index === 0) {
+          this.map.setCenter(position)
+        }
+      })
     },
 
     async fetchDealsData() {
@@ -348,15 +395,6 @@ export default {
       }
 
       this.map = new kakao.maps.Map(mapContainer, mapOption)
-
-      kakao.maps.event.addListener(this.map, 'dragend', () => {
-        this.updateMarkers()
-      })
-
-      // 확대/축소 이벤트 리스너
-      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
-        this.updateMarkers()
-      })
     },
 
     searchPlace() {
@@ -396,23 +434,19 @@ export default {
 .overlay-info {
   background: white;
   border-radius: 6px;
-  border: 1px solid #ccc;
-  padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  z-index: -1;
+  pointer-events: auto;
+
+  margin-bottom: 4vh; /* 오버레이 내 클릭 이벤트 활성화 */
 }
 .overlay-info h4 {
-  margin: 0;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eee;
   font-size: 16px;
 }
 .overlay-info p {
-  margin: 5px 0 0;
   font-size: 14px;
 }
 </style>
@@ -545,6 +579,8 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .info-group {
