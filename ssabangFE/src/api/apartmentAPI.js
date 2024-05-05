@@ -17,8 +17,10 @@ const getApartmentData = async (aptcode) => {
   try {
     console.log(aptcode)
     const response = await axios.get(
-      `${API_URL}/house-deals/apartment?apt-code=${aptcode}&sort-option=DESC`
+      // `${API_URL}/house-deals/apartment?apt-code=${aptcode}&sort-option=DESC`
+      `${API_URL}/house-deals?apartment-name=${aptcode}&sort-option=DESC`
     )
+    console.log(response.data.result)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -28,7 +30,19 @@ const getApartmentData = async (aptcode) => {
 
 const getDongData = async (dongName) => {
   try {
-    const response = await axios.get(`${API_URL}/house-infos/dong?name=${dongName}&`)
+    const response = await axios.get(`${API_URL}/house-deals/dongName?dongName=${dongName}&`)
+    return response.data.result
+  } catch (error) {
+    console.error('Error fetching deals:', error)
+    return []
+  }
+}
+
+const getApartmentMarker = async (lat, lng) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/house-deals/near?latitude=${lat}&longitude=${lng}&distance=1000`
+    )
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -56,4 +70,11 @@ const getGuMarker = async () => {
   }
 }
 
-export { searchKeyword, getApartmentData, getDongMarker, getGuMarker,getDongData } // 명시적으로 내보내기
+export {
+  searchKeyword,
+  getApartmentData,
+  getDongMarker,
+  getGuMarker,
+  getApartmentMarker,
+  getDongData
+} // 명시적으로 내보내기

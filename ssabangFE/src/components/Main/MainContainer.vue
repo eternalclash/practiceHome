@@ -8,9 +8,8 @@
         width: 200px;
         z-index: 5;
         width: 25vw;
-        background-color: white;
+        background-color: transparent;
         height: auto;
-        box-shadow: 4px 4px 8px #aaa;
         display: flex;
         flex-direction: column;
       "
@@ -21,63 +20,66 @@
           height: 5vh;
           justify-content: center;
           align-items: center;
-          border-bottom: 0.1px solid lightgray;
+          width: 100%;
         "
       >
         <input
+          style="width: 100%; height: 3vh; font-size: 1rem"
           :value="searchKeyword"
           @input="handleInput"
-          placeholder="동이름,혹은 아파트이름으로 검색해주세요"
+          placeholder="동이름(역삼동),아파트이름으로 검색"
         />
       </div>
-      <div style="display: flex; height: 5vh; justify-content: center; align-items: center">
+      <div style="display: flex; height: 3vh; justify-content: center; align-items: center">
         <div
           style="
-            width: 70%;
-            height: 70%;
+            width: 100%;
+            height: 3vh;
             margin: 0;
-            padding-left: 3%;
             border: 1px solid;
             display: flex;
             justify-content: center;
             align-items: center;
+            background-color: #5ea1ff;
+            color: white;
           "
           id="search-input"
           placeholder="검색..."
           @keyup.enter="searchPlace"
         >
-          검색 조건을 설정해주세요.
-        </div>
-        <div
-          style="
-            width: 20%;
-            height: 70%;
-            border: 1px solid;
-            justify-content: center;
-            display: flex;
-            align-items: center;
-          "
-        >
-          필터
+          아파트 찜목록 보기
         </div>
       </div>
-      <div class="search-results" v-if="deals && deals.length > 0">
-        <div
-          v-for="(deal, index) in deals"
-          :key="index"
-          class="deal-item"
-          @click="handleApartment(deal)"
-        >
-          @{{ deal.type }} - {{ deal.keyword }}
+      <div
+        v-if="showSearchResults"
+        class="search-results"
+        style="background-color: white; position: relative"
+      >
+        <div v-if="deals && deals.length > 0">
+          <div
+            v-for="(deal, index) in deals"
+            :key="index"
+            class="deal-item"
+            @click="handleApartment(deal)"
+          >
+            @{{ deal.type }} - {{ deal.keyword }}
+          </div>
+        </div>
+        <div v-else>
+          <div class="deal-item">검색결과가 존재하지 않습니다.</div>
         </div>
       </div>
+      <!-- 닫기 상태일 때 버튼만 보여주기 -->
+      <button class="close-button" @click="toggleSearchResults">
+        {{ showSearchResults ? '▲' : '▼' }}
+      </button>
     </div>
 
     <div class="map-container">
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
     <div class="info-group" v-if="Object.keys(deal).length > 0">
-      <div class="apt-title">{{ deal.apartmentName }}</div>
+      <div class="apt-title">{{ this.infomation.apartmentName }}</div>
 
       <div class="flex">
         <div class="apt-size">전체</div>
@@ -102,10 +104,10 @@
           <div>실거래정보</div>
         </div>
         <div>
-          <div class="list-between2" v-for="(info, index) in infomation.total">
+          <div class="list-between2" v-for="(info, index) in infomation.allYear" :key="index">
             <div>{{ info.dealDate }}</div>
             <div class="column-left">
-              <div class="price">매매가 {{ info.dealAmount }}</div>
+              <div class="price">매매가 {{ formatAmount(info.dealAmount) }}</div>
               <div>평수 {{ info.area }}㎡</div>
             </div>
           </div>
@@ -122,6 +124,7 @@ import {
   getApartmentData,
   getDongMarker,
   getGuMarker,
+  getApartmentMarker,
   getDongData
 } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
@@ -134,9 +137,13 @@ export default {
       marker: null,
       dongMarkers: [],
       guMarkers: [],
+      apartmentMarkers: [],
       searchKeyword: '',
       deals: [],
       deal: {},
+
+      lat: 37.566826,
+      lng: 126.9786567,
 
       infomation: {
         areaSize: 0,
@@ -161,90 +168,121 @@ export default {
         ['2004-03', 130]
       ],
       chartOptions: {
-        title: '실거래가',
+        title: '실거래가(단위: 만원)',
         curveType: 'function',
         legend: { position: 'bottom' }
       },
       chartType: 'LineChart',
-      markers: []
+      markers: [],
+      showSearchResults: false
     }
   },
   async mounted() {
     this.initMap()
     this.dongMarkers = await getDongMarker()
     this.guMarkers = await getGuMarker()
-    this.displayMarkers()
-    // kakao.maps.event.addListener(this.map, 'dragend', this.updateMarkers)
-    kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
+    this.updateMarkers()
   },
   components: {
     GoogleChart
   },
   methods: {
-    async displayMarkers() {
-      const markersData = this.dongMarkers // 마커 데이터를 로드하는 함수
-      this.clearMarkers() // 기존 마커 제거
+    formatAmount(amount) {
+      const billion = Math.floor(amount / 10000)
+      const million = amount % 10000
+      let result = ''
 
-      markersData.forEach((data) => {
-        const position = new kakao.maps.LatLng(data.lat, data.lng)
+      if (billion > 0) {
+        result += `${billion}억`
+      }
+      if (million > 0) {
+        result += (result ? ' ' : '') + `${million.toLocaleString()}만원`
+      }
 
-        const marker = new kakao.maps.Marker({
-          map: this.map,
-          position: position
-        })
-
-        const overlay = new kakao.maps.CustomOverlay({
-          content: `<div class="overlay-info">
-          <h4>${data.bjdong_nm}</h4>
-          <p>평균가: ${data.amount}만원</p>
-        </div>`,
-          map: this.map,
-          position: position,
-          yAnchor: 1
-        })
-
-        this.markers.push({ marker, overlay })
-      })
+      return result
     },
 
+    toggleSearchResults() {
+      this.showSearchResults = !this.showSearchResults // 검색 결과 창 표시 상태를 토글합니다.
+    },
+    closeSearchResults() {
+      this.showSearchResults = false // 검색 결과 창을 숨깁니다.
+    },
+    openSearchResults() {
+      this.showSearchResults = true // 검색 결과 창을 숨깁니다.
+    },
     clearMarkers() {
       this.markers.forEach((m) => {
-        m.marker.setMap(null)
-        m.overlay.setMap(null)
+        m.marker?.setMap(null)
+        m.overlay?.setMap(null)
       })
       this.markers = []
     },
     async updateMarkers() {
       this.clearMarkers() // 기존 마커 제거
+      if (this.map.getLevel() <= 4) {
+        this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
+        const markersData = this.apartmentMarkers
+        markersData.forEach((data) => {
+          const position = new kakao.maps.LatLng(data.latitude, data.longitude)
+          const name = data.apartmentName
+          const formattedPrice = (data?.averagePrice / 10000).toFixed(2) + '억'
+          const overlayElement = document.createElement('div')
+          overlayElement.className = 'overlay-info'
+          overlayElement.innerHTML = `
+      <div class="overlay-text">${name}</div>
+      <div class="overlay-number">${formattedPrice}</div>
+    `
+          data.type = 'APARTMENT'
+          data.keyword = name
+          // 클릭 이벤트 리스너 직접 추가
+          overlayElement.addEventListener('click', async () => {
+            await this.handleApartment(data)
+          })
+          const overlay = new kakao.maps.CustomOverlay({
+            map: this.map,
+            position: position,
+            content: overlayElement,
+            yAnchor: 1
+          })
 
-      // 지도의 현재 레벨에 따라 적절한 API 호출
-      const useDong = this.map.getLevel() < 6
-      console.log(this.map.getLevel())
-      const markersData = useDong ? this.dongMarkers : this.guMarkers
-      console.log('Updated markers:', markersData)
-
-      markersData.forEach((data) => {
-        const position = new kakao.maps.LatLng(data.lat, data.lng)
-
-        const marker = new kakao.maps.Marker({
-          map: this.map,
-          position: position
+          this.markers.push({ overlay })
         })
+      } else {
+        // 지도의 현재 레벨에 따라 적절한 API 호출
+        const useDong = this.map.getLevel() < 6
+        console.log(this.map.getLevel())
+        const markersData = useDong ? this.dongMarkers : this.guMarkers
+        // console.log('Updated markers:', markersData)
 
-        // 조건에 따라 적절한 속성 이름 사용
-        const name = useDong ? data.bjdong_nm : data.sgg_nm
-        const overlay = new kakao.maps.CustomOverlay({
-          content: `<div class="overlay-info">
-        <h4>${name}</h4>
-        <p>평균가: ${data.amount}만원</p>
-      </div>`,
-          map: this.map,
-          position: position,
-          yAnchor: 1
+        markersData.forEach((data) => {
+          const position = new kakao.maps.LatLng(data.lat, data.lng)
+          const name = useDong ? data.bjdong_nm : data.sgg_nm // 조건에 따라 적절한 속성 이름 사용
+          const formattedPrice = (data.amount / 10000).toFixed(2) + '억'
+
+          // DOM 요소 직접 생성
+          const overlayElement = document.createElement('div')
+          overlayElement.className = 'overlay-info'
+          overlayElement.innerHTML = `
+      <div class="overlay-text">${name}</div>
+      <div class="overlay-number">${formattedPrice}</div>
+    `
+
+          // 클릭 이벤트 리스너 직접 추가
+          overlayElement.addEventListener('click', () => {
+            this.handleApartment(data)
+          })
+
+          const overlay = new kakao.maps.CustomOverlay({
+            map: this.map,
+            position: position,
+            content: overlayElement,
+            yAnchor: 1
+          })
+
+          this.markers.push({ overlay })
         })
-
-        this.markers.push({ marker, overlay })
-      })
+      }
     },
 
     handleInput(event) {
@@ -252,14 +290,16 @@ export default {
       const value = event.target.value
       this.inputTimer = setTimeout(() => {
         this.searchKeyword = value
+        this.openSearchResults()
         this.fetchDealsData()
       }, 1000) // 디바운스 시간은 필요에 따라 조정
     },
     async handleApartment(deal) {
       try {
         console.log(deal)
-        if (deal.aptCode) {
-          this.infomation = await getApartmentData(deal.aptCode)
+        if (deal.type == 'APARTMENT') {
+          console.log('deal' + deal)
+          this.infomation = await getApartmentData(deal.keyword)
 
           this.deal = deal
           let high = Number.MIN_SAFE_INTEGER
@@ -268,8 +308,10 @@ export default {
           let totalPrice = 0
           this.chartData = []
           if ((this.tempYear = -1)) {
-            this.chartData = calculateMonthlyAverage(this.infomation.total)
-            this.tempDeal = this.infomation.total
+            // this.chartData = calculateMonthlyAverage(this.infomation.total)
+            this.chartData = calculateMonthlyAverage(this.infomation.allYear)
+            // this.tempDeal = this.infomation.total
+            this.tempDeal = this.infomation.allYear
           } else if (this.tempYear == 1) {
             this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
             this.tempDeal = this.infomation.oneYear
@@ -278,18 +320,14 @@ export default {
             this.tempDeal = this.infomation.threeYear
           }
 
-          // 정렬 확인
-          // console.log("차트데이터확인>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.",this.chartData)
-
           for (let info of this.tempDeal) {
-            const dealAmountNumeric = parseInt(info.dealAmount.replace(/,/g, ''), 10) * 10000
+            const dealAmountNumeric = info.dealAmount * 10000
             totalArea += Number(info.area)
             totalPrice += dealAmountNumeric
             if (high < dealAmountNumeric) high = dealAmountNumeric
             if (low > dealAmountNumeric) low = dealAmountNumeric
           }
 
-          this.chartData.sort((a, b) => b[0] - a[0]).reverse()
           this.chartData.unshift(['Month', '실거래가'])
           this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
           this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
@@ -297,25 +335,11 @@ export default {
           this.highPrice = formatToKoreanCurrency(high)
           this.lowPrice = formatToKoreanCurrency(low)
 
-          const content = `
-          <div style="width:4px">
-            
-            <p>매매 가격: ${this.lowPrice} ~ ${this.highPrice}</p>
-          </div>
-        `
-
           // 지도 중심을 업데이트하는 로직 추가
           if (this.map && deal.lat && deal.lng) {
             this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
 
-            if (this.marker) {
-              this.marker.setPosition(new kakao.maps.LatLng(deal.lat, deal.lng))
-            } else {
-              this.marker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(deal.lat, deal.lng),
-                map: this.map
-              })
-            }
+            this.map.setCenter(position)
 
             if (this.overlay) {
               this.overlay.setMap(null) // 기존 오버레이 제거
@@ -323,12 +347,12 @@ export default {
 
             this.overlay = new kakao.maps.CustomOverlay({
               map: this.map,
-              position: new kakao.maps.LatLng(deal.lat, deal.lng),
-              content: content
+              position: new kakao.maps.LatLng(deal.lat, deal.lng)
               // yAnchor: 1.5 // 마커 위에 표시하기 위해 조정
             })
           }
         } else {
+          console.log('dongdata')
           this.infomation = await getDongData(deal.keyword)
           this.displayApartmentMarkers(this.infomation)
         }
@@ -338,38 +362,39 @@ export default {
     },
 
     displayApartmentMarkers(apartmentData) {
-      this.clearMarkers() // 기존 마커 제거
+      this.clearMarkers()
       apartmentData.forEach((data, index) => {
-        const position = new kakao.maps.LatLng(data.lat, data.lng)
-
-        const content = `<div style="width:auto; margin-bottom:5vh; background:white; padding: 1%;">
-          <div>${data.apartmentName} </div>
-          <div>${data.address} </div>
-     
-    </div>`
-
-        const marker = new kakao.maps.Marker({
-          map: this.map,
-          position: position
-        })
+        const position = new kakao.maps.LatLng(data.latitude, data.longitude)
+        const formattedPrice = (data.averagePrice / 10000).toFixed(2) + '억'
+        const overlayElement = document.createElement('div')
+        data.type = 'APARTMENT'
+        data.keyword = data.apartmentName
+        overlayElement.className = 'overlay-info'
+        overlayElement.innerHTML = `
+      <div class="overlay-text">${data.apartmentName}</div>
+      <div class="overlay-number">${formattedPrice}</div>
+    `
 
         const overlay = new kakao.maps.CustomOverlay({
-          content: content,
           map: this.map,
           position: position,
-          yAnchor: 1,
-          zIndex: -1
+          content: overlayElement,
+          yAnchor: 2.3
         })
-        // this.markers.push({ marker, overlay })
 
-        // 마커에 클릭 이벤트 리스너 추가
-        kakao.maps.event.addListener(marker, 'click', () => {
+        overlayElement.addEventListener('click', () => {
+          overlay.setZIndex(5)
           this.handleApartment(data)
         })
+
+        this.markers.push({ overlay })
+
+        overlay.setMap(this.map)
 
         // 첫 번째 마커에서 지도 중심을 이동
         if (index === 0) {
           this.map.setCenter(position)
+          this.map.setLevel(3)
         }
       })
     },
@@ -378,8 +403,8 @@ export default {
       try {
         console.log(this.searchKeyword)
         if (this.searchKeyword.trim() !== '') {
-          // 각 함수의 결과를 개별적으로 받아옵니다.
           this.deals = await searchKeyword(this.searchKeyword)
+          console.log(this.deals)
           this.deals.reverse()
         }
       } catch (error) {
@@ -390,73 +415,65 @@ export default {
     initMap() {
       const mapContainer = document.getElementById('map') // 지도를 표시할 div
       const mapOption = {
-        center: new kakao.maps.LatLng(37.566826, 126.9786567), // 지도의 중심좌표
+        center: new kakao.maps.LatLng(this.lat, this.lng), // 지도의 중심좌표
         level: 3
       }
 
       this.map = new kakao.maps.Map(mapContainer, mapOption)
-    },
 
-    searchPlace() {
-      const keyword = document.getElementById('search-input').value
-      if (!keyword.replace(/^\s+|\s+$/g, '')) {
-        alert('키워드를 입력해주세요!')
-        return
-      }
+      kakao.maps.event.addListener(this.map, 'dragend', () => {
+        // 지도의 새 중심 좌표를 가져와서 저장
+        const center = this.map.getCenter()
+        this.lat = center.getLat()
+        this.lng = center.getLng()
 
-      const ps = new kakao.maps.services.Places()
+        // 마커 업데이트 함수 호출
+        this.updateMarkers()
+      })
 
-      ps.keywordSearch(keyword, this.placesSearchCB)
-    },
-
-    placesSearchCB(data, status, pagination) {
-      if (status === kakao.maps.services.Status.OK) {
-        const firstPlace = data[0]
-
-        this.map.setCenter(new kakao.maps.LatLng(firstPlace.y, firstPlace.x))
-
-        if (this.marker) {
-          this.marker.setPosition(new kakao.maps.LatLng(firstPlace.y, firstPlace.x))
-        } else {
-          this.marker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(firstPlace.y, firstPlace.x),
-            map: this.map
-          })
-        }
-      } else {
-        alert('검색 결과가 없습니다.')
-      }
+      // 확대/축소 이벤트 리스너
+      kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
     }
   }
 }
 </script>
 <style>
 .overlay-info {
-  background: white;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: -1;
+  background-color: #38b6ff;
+  z-index: 2;
+  overflow: visible !important;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  -webkit-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
+  padding: 0% 0.5vw;
   pointer-events: auto;
-
-  margin-bottom: 4vh; /* 오버레이 내 클릭 이벤트 활성화 */
 }
-.overlay-info h4 {
-  font-size: 16px;
+.overlay-text {
+  color: black;
+  font-size: 11px;
+  font-weight: normal;
+  white-space: nowrap;
 }
-.overlay-info p {
-  font-size: 14px;
+.overlay-number {
+  color: black;
+  font-size: 13px;
+  font-weight: normal;
+  white-space: nowrap;
 }
 </style>
 <style scoped>
 .search-results {
-  height: 40vh;
+  max-height: 40vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
-  margin-top: 10px;
 }
 
 .deal-item {
@@ -579,7 +596,6 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: auto;
   z-index: 1;
 }
 

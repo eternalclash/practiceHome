@@ -1,6 +1,7 @@
 <template>
   <header class="header-group">
     <img :src="logoSrc" alt="Logo" class="header-logo" />
+    <div @click="goRealEstate">서울시 최근거래가</div>
     <button class="login-button" @click="login">로그인</button>
   </header>
   <router-view />
@@ -9,7 +10,6 @@
 <script>
 // 이미지를 import 문을 사용하여 불러옵니다.
 import logoSrc from '@/assets/SSABANG.svg'
-
 export default {
   name: 'App',
   data() {
@@ -21,6 +21,9 @@ export default {
     login() {
       // 회원가입 로직을 여기에 추가
       this.$router.push({ name: 'LoginContainer' })
+    },
+    goRealEstate() {
+      this.$router.push({ name: 'RealEstateList' })
     }
   }
 }
