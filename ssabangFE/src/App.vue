@@ -5,7 +5,7 @@
     <button class="login-button" @click="login">로그인</button>
   </header>
   <router-view />
-</template>
+</template>ㅋ
 
 <script>
 // 이미지를 import 문을 사용하여 불러옵니다.
