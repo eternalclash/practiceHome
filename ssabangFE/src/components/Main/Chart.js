@@ -18,7 +18,7 @@ export const data = [
 ]
 
 export const options = {
-  title: '실거래가',
+  title: '실거래가(단위:만원)',
   curveType: 'function',
   legend: { position: 'bottom' },
   hAxis: {
