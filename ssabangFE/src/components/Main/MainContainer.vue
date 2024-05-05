@@ -61,14 +61,24 @@
           필터
         </div>
       </div>
-      <div class="search-results" v-if="deals && deals.length > 0">
-        <div
-          v-for="(deal, index) in deals"
-          :key="index"
+      <div :class="{'search-results': deals.length > 0}">
+        <!-- <div
+          v-for="(fave, index) in favoarite" :key="index" 
           class="deal-item"
-          @click="handleApartment(deal)"
-        >
-          @{{ deal.type }} - {{ deal.keyword }}
+          @click="handleApartment(fave)"
+        > -->
+        <div class="deal-item" style="background-color: #2462B9;">
+          MY찜 - 싸방아파트
+        </div>
+        <div v-if="deals && deals.length > 0">
+          <div
+            v-for="(deal, index) in deals"
+            :key="index"
+            class="deal-item"
+            @click="handleApartment(deal)"
+          >
+            @{{ deal.type }} - {{ deal.keyword }}
+          </div>
         </div>
       </div>
     </div>
@@ -76,13 +86,24 @@
     <div class="map-container">
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
-    <div class="info-group" v-if="Object.keys(deal).length > 0">
-      <div class="apt-title">{{ deal.apartmentName }}</div>
 
-      <div class="flex">
-        <div class="apt-size">전체</div>
-        <div class="apt-size" v-for="(area, index) in areas">{{ area }}㎡</div>
-      </div>
+    <div class="info-group" v-if="Object.keys(deal).length > 0">
+      <div class="apt-title">{{ deal.keyword }} <button @click="addToFavorites" class="favorite-button">찜</button></div>
+
+      <swiper class="flex"
+      :slides-per-view="3"
+      :space-between="30"
+      :centeredSlides="true"
+      :navigation="true"
+      >
+        <swiper-slide class="apt-size">
+          <div>전체</div>
+          </swiper-slide>
+          <swiper-slide class="apt-size" v-for="(area, index) in areas" :key="index">
+            <div>{{ area }}㎡</div>
+          </swiper-slide>
+      </swiper>
+      
       <div>
         <div class="sise">싸방시세</div>
         <div class="mame">매매 {{ this.lowPrice }} ~ {{ this.highPrice }}</div>
@@ -95,18 +116,66 @@
         <div class="date-container">최근3년</div>
         <div class="date-container">전체기간</div>
       </div>
+    
       <div class="georae">
         <div class="silgeorae">실거래가</div>
         <div class="list-between">
           <div>계약일</div>
           <div>실거래정보</div>
         </div>
-        <div>
-          <div class="list-between2" v-for="(info, index) in infomation.total">
+        <div class="info-list">
+          <div class="list-between2" v-for="(info, index) in infomation.total" :key="index">
             <div>{{ info.dealDate }}</div>
             <div class="column-left">
               <div class="price">매매가 {{ info.dealAmount }}</div>
               <div>평수 {{ info.area }}㎡</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="convenience">
+        <div>
+          <div class="silgeorae">학군정보</div>
+          <div class="list-between">
+            <div>학군</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방초등학교</div>
+            <div class="column-left">
+              <div class="price">도보 10분</div>
+              <div>거리 3km</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="silgeorae">역세권정보</div>
+          <div class="list-between">
+            <div>역</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방역</div>
+            <div class="column-left">
+              <div class="price">도보 7분</div>
+              <div>거리 2km</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="silgeorae">병원정보</div>
+          <div class="list-between">
+            <div>병원</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방정신병원</div>
+            <div class="column-left">
+              <div class="price">도보 10분</div>
+              <div>거리 3km</div>
             </div>
           </div>
         </div>
@@ -126,6 +195,11 @@ import {
 } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
+import { Swiper, SwiperSlide } from "swiper/vue"
+import "swiper/swiper-bundle.min.css"
+import SwiperCore, { Pagination, Navigation, Autoplay } from "swiper";
+SwiperCore.use([ Pagination, Navigation, Autoplay ]);
+
 export default {
   name: 'MainContainer',
   data() {
@@ -149,8 +223,8 @@ export default {
       },
       tempDeal: [], // 구간 deals
       tempYear: -1, // 구간 year
-
       areas: [],
+      apartName : '',
       highPrice: '',
       lowPrice: '',
       avgPrice: '',
@@ -166,7 +240,7 @@ export default {
         legend: { position: 'bottom' }
       },
       chartType: 'LineChart',
-      markers: []
+      markers: [],
     }
   },
   async mounted() {
@@ -178,7 +252,9 @@ export default {
     kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
   },
   components: {
-    GoogleChart
+    GoogleChart,
+    Swiper,
+    SwiperSlide,
   },
   methods: {
     async displayMarkers() {
@@ -257,10 +333,11 @@ export default {
     },
     async handleApartment(deal) {
       try {
-        console.log(deal)
+        console.log("딜",deal)
         if (deal.aptCode) {
           this.infomation = await getApartmentData(deal.aptCode)
 
+          console.log("info 정보>>>>>>>>>>>>>>>>>", this.infomation)
           this.deal = deal
           let high = Number.MIN_SAFE_INTEGER
           let low = Number.MAX_SAFE_INTEGER
@@ -269,7 +346,7 @@ export default {
           this.chartData = []
           if ((this.tempYear = -1)) {
             this.chartData = calculateMonthlyAverage(this.infomation.total)
-            this.tempDeal = this.infomation.total
+            this.tempDeal = this.infomation.total.reverse()
           } else if (this.tempYear == 1) {
             this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
             this.tempDeal = this.infomation.oneYear
@@ -303,7 +380,6 @@ export default {
             <p>매매 가격: ${this.lowPrice} ~ ${this.highPrice}</p>
           </div>
         `
-
           // 지도 중심을 업데이트하는 로직 추가
           if (this.map && deal.lat && deal.lng) {
             this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
@@ -334,6 +410,16 @@ export default {
         }
       } catch (e) {
         console.error('Error fetching apartment data:', e)
+      }
+    },
+
+    // 차트섹션의 찜하기 버튼
+    async addToFavorites() {
+      try {
+        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`);
+        console.log("서버 응답:", response.data);
+      } catch (error) {
+        console.error("요청 실패:", error);
       }
     },
 
@@ -530,7 +616,8 @@ export default {
   align-items: center;
 
   border-bottom: 0.1px solid lightgray;
-  border-radius: 1px;
+  border-radius: 1px; 
+
 }
 .georae {
   display: flex;
@@ -611,4 +698,20 @@ export default {
   align-items: center;
   justify-content: center;
 }
+
+.favorite-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #38B6FF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  outline: none;
+}
+.georae .info-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 </style>

@@ -21,7 +21,7 @@ function calculateMonthlyAverage(data) {
 
   for (const item of data) {
     const [year, month] = item.dealDate.split('. ').map(part => part.padStart(2, '0'));
-    const dealAmount = parseFloat(item.dealAmount);
+    const dealAmount = parseInt(item.dealAmount.replace(/,/g, ''));
 
     while ((year !== currentYear || month !== currentMonth) && (currentYear !== '' || currentMonth !== '')) {
       // 빈 달에 대해 이전 달의 정보를 사용하되, 이전 달이 없으면 기본 가격을 사용
