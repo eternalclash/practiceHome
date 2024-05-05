@@ -127,6 +127,7 @@ import {
   getApartmentMarker,
   getDongData
 } from '@/api/apartmentAPI'
+import { getSubwayMarker, findSubwayNear } from '@/api/subwayAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 export default {
@@ -135,6 +136,7 @@ export default {
     return {
       map: null,
       marker: null,
+      subwayMarkers: [],
       dongMarkers: [],
       guMarkers: [],
       apartmentMarkers: [],
@@ -179,14 +181,16 @@ export default {
   },
   async mounted() {
     this.initMap()
-    this.dongMarkers = await getDongMarker()
-    this.guMarkers = await getGuMarker()
+    this.dongMarkers = getDongMarker()
+    this.guMarkers = getGuMarker()
+    this.subwayMarkers = getSubwayMarker()
     this.updateMarkers()
   },
   components: {
     GoogleChart
   },
   methods: {
+    getSubwayMarker() {},
     formatAmount(amount) {
       const billion = Math.floor(amount / 10000)
       const million = amount % 10000
@@ -220,7 +224,8 @@ export default {
     },
     async updateMarkers() {
       this.clearMarkers() // 기존 마커 제거
-      if (this.map.getLevel() <= 4) {
+      console.log(this.subwayMarkers)
+      if (this.map.getLevel() < 4) {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
         markersData.forEach((data) => {
@@ -352,7 +357,6 @@ export default {
             })
           }
         } else {
-          console.log('dongdata')
           this.infomation = await getDongData(deal.keyword)
           this.displayApartmentMarkers(this.infomation)
         }
