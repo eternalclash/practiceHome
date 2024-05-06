@@ -18,5 +18,19 @@ function parseDate(dateStr) {
 
   return new Date(formattedDate)
 }
+function formatAmount(amount) {
+  const billion = Math.floor(amount / 10000)
+  const million = amount % 10000
+  let result = ''
 
-export { formatToKoreanCurrency, parseDate } // 명시적으로 내보내기
+  if (billion > 0) {
+    result += `${billion}억`
+  }
+  if (million > 0) {
+    result += (result ? ' ' : '') + `${million.toLocaleString()}만원`
+  }
+
+  return result
+}
+
+export { formatToKoreanCurrency, parseDate, formatAmount } // 명시적으로 내보내기
