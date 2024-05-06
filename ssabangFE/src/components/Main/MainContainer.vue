@@ -79,11 +79,11 @@
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
     <div class="info-group" v-if="Object.keys(deal).length > 0">
-      <div class="apt-title">{{ this.infomation.apartmentName }}</div>
-
+      <div class="apt-title">{{ deal.keyword }} <button @click="addToFavorites" class="favorite-button">찜</button></div>
+      
       <div class="flex">
-        <div class="apt-size">전체</div>
-        <div class="apt-size" v-for="(area, index) in areas">{{ area }}㎡</div>
+        <div class="apt-size clickStyle" :class="{clicked:this.tempArea == -1}" @click="changeArea(-1)">전체</div>
+        <div class="apt-size clickStyle" :class="{clicked:this.tempArea == area}" @click="changeArea(area)" v-for="(area, index) in areas">{{ area }}㎡</div>
       </div>
       <div>
         <div class="sise">싸방시세</div>
@@ -93,9 +93,9 @@
 
       <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" />
       <div class="flex-center">
-        <div class="date-container">최근1년</div>
-        <div class="date-container">최근3년</div>
-        <div class="date-container">전체기간</div>
+        <div class="date-container clickStyle" :class="{clicked:this.tempYear == 1}" @click="changeYear(1)">최근1년</div>
+        <div class="date-container clickStyle" :class="{clicked:this.tempYear == 3}" @click="changeYear(3)">최근3년</div>
+        <div class="date-container clickStyle" :class="{clicked:this.tempYear == -1}" @click="changeYear(-1)">전체기간</div>
       </div>
       <div class="georae">
         <div class="silgeorae">실거래가</div>
@@ -104,11 +104,59 @@
           <div>실거래정보</div>
         </div>
         <div>
-          <div class="list-between2" v-for="(info, index) in infomation.allYear" :key="index">
-            <div>{{ info.dealDate }}</div>
+          <div class="info-list">
+            <div class="list-between2" v-for="(info, index) in tempDeal" :key="index">
+              <div>{{ info.dealDate }}</div>
+              <div class="column-left">
+                <div class="price">매매가 {{ formatAmount(info.dealAmount) }}</div>
+                <div>평수 {{ info.area }}㎡</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="convenience">
+        <div>
+          <div class="silgeorae">학군정보</div>
+          <div class="list-between">
+            <div>학군</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방초등학교</div>
             <div class="column-left">
-              <div class="price">매매가 {{ formatAmount(info.dealAmount) }}</div>
-              <div>평수 {{ info.area }}㎡</div>
+              <div class="price">도보 10분</div>
+              <div>거리 3km</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="silgeorae">역세권정보</div>
+          <div class="list-between">
+            <div>역</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방역</div>
+            <div class="column-left">
+              <div class="price">도보 7분</div>
+              <div>거리 2km</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="silgeorae">병원정보</div>
+          <div class="list-between">
+            <div>병원</div>
+            <div>거리</div>
+          </div>
+          <div class="list-between2">
+            <div>싸방정신병원</div>
+            <div class="column-left">
+              <div class="price">도보 10분</div>
+              <div>거리 3km</div>
             </div>
           </div>
         </div>
@@ -129,6 +177,7 @@ import {
 } from '@/api/apartmentAPI'
 import { formatToKoreanCurrency, parseDate } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
+import { calculateYearlyAverage } from './changSectionYear'
 export default {
   name: 'MainContainer',
   data() {
@@ -146,16 +195,23 @@ export default {
       lng: 126.9786567,
 
       infomation: {
-        areaSize: 0,
-        hasOneYear: false,
-        hasThreeYear: false,
+        apartmentName: '',
+        latitude : 37.5001,
+        longitude : 127.0385,
+        allYearMaxPrice: 0,
+        allYearMinPrice: 0,
+        oneYearMaxPrice: 0,
+        oneYearMinPrice: 0,
+        threeYearMaxPrice: 0,
+        threeYearMinPrice: 0,
         areas: [],
-        total: [],
+        allYear: [],
         oneYear: [],
         threeYear: []
       },
       tempDeal: [], // 구간 deals
       tempYear: -1, // 구간 year
+      tempArea: -1, // 구간 area
 
       areas: [],
       highPrice: '',
@@ -300,41 +356,13 @@ export default {
         if (deal.type == 'APARTMENT') {
           console.log('deal' + deal)
           this.infomation = await getApartmentData(deal.keyword)
-
           this.deal = deal
-          let high = Number.MIN_SAFE_INTEGER
-          let low = Number.MAX_SAFE_INTEGER
-          let totalArea = 0
-          let totalPrice = 0
-          this.chartData = []
-          if ((this.tempYear = -1)) {
-            // this.chartData = calculateMonthlyAverage(this.infomation.total)
-            this.chartData = calculateMonthlyAverage(this.infomation.allYear)
-            // this.tempDeal = this.infomation.total
-            this.tempDeal = this.infomation.allYear
-          } else if (this.tempYear == 1) {
-            this.chartData = calculateMonthlyAverage(this.infomation.oneYear)
-            this.tempDeal = this.infomation.oneYear
-          } else if (this.tempYear == 3) {
-            this.chartData = calculateMonthlyAverage(this.infomation.threeYear)
-            this.tempDeal = this.infomation.threeYear
-          }
 
-          for (let info of this.tempDeal) {
-            const dealAmountNumeric = info.dealAmount * 10000
-            totalArea += Number(info.area)
-            totalPrice += dealAmountNumeric
-            if (high < dealAmountNumeric) high = dealAmountNumeric
-            if (low > dealAmountNumeric) low = dealAmountNumeric
-          }
+          this.tempYear = '-1'
+          this.tempArea = '-1'
 
-          this.chartData.unshift(['Month', '실거래가'])
-          this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
-          this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
-
-          this.highPrice = formatToKoreanCurrency(high)
-          this.lowPrice = formatToKoreanCurrency(low)
-
+          this.drawChartSection();
+          
           // 지도 중심을 업데이트하는 로직 추가
           if (this.map && deal.lat && deal.lng) {
             this.map.setCenter(new kakao.maps.LatLng(deal.lat, deal.lng))
@@ -361,6 +389,59 @@ export default {
       }
     },
 
+    drawChartSection() {
+      let high = Number.MIN_SAFE_INTEGER
+      let low = Number.MAX_SAFE_INTEGER
+      let totalArea = 0
+      let totalPrice = 0
+      this.chartData = []
+
+      let returnData = [];
+      if (this.tempYear == -1) {
+        returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea) 
+        this.chartData = returnData[0]
+        this.tempDeal = returnData[1]
+      } else if (this.tempYear == 1) {
+        returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
+        this.chartData = returnData[0]
+        this.tempDeal = returnData[1]
+      } else if (this.tempYear == 3) {
+        returnData = calculateYearlyAverage(this.infomation.threeYear, this.tempArea)
+        this.chartData = returnData[0]
+        this.tempDeal = returnData[1]
+      }
+
+      for (let info of this.tempDeal) {
+        const dealAmountNumeric = info.dealAmount * 10000
+        totalArea += Number(info.area)
+        totalPrice += dealAmountNumeric
+        if (high < dealAmountNumeric) high = dealAmountNumeric
+        if (low > dealAmountNumeric) low = dealAmountNumeric
+      }
+
+      if(this.tempYear == -1){
+        this.chartData.unshift(['Year', '실거래가'])
+      } else if(this.tempYear == 1){
+        this.chartData.unshift(['Month', '실거래가'])
+      } else if(this.tempYear == 3){
+        this.chartData.unshift(['Month', '실거래가'])
+      }
+      this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
+      this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
+
+      this.highPrice = formatToKoreanCurrency(high)
+      this.lowPrice = formatToKoreanCurrency(low)
+    },
+
+    changeArea(area) {
+      this.tempArea = area;
+      this.drawChartSection();
+    },
+    changeYear(year) {
+      this.tempYear = year;
+      this.drawChartSection();
+    },
+
     displayApartmentMarkers(apartmentData) {
       this.clearMarkers()
       apartmentData.forEach((data, index) => {
@@ -374,7 +455,6 @@ export default {
       <div class="overlay-text">${data.apartmentName}</div>
       <div class="overlay-number">${formattedPrice}</div>
     `
-
         const overlay = new kakao.maps.CustomOverlay({
           map: this.map,
           position: position,
@@ -433,7 +513,17 @@ export default {
 
       // 확대/축소 이벤트 리스너
       kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
-    }
+    },
+
+    // chartSection의 찜하기 버트 api호출
+    async addToFavorites() {
+      try {
+        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`);
+        console.log("서버 응답:", response.data);
+      } catch (error) {
+        console.error("요청 실패:", error);
+      }
+    },
   }
 }
 </script>
@@ -626,5 +716,28 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.favorite-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #38B6FF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  outline: none;
+}
+.georae .info-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.clickStyle {
+  cursor: pointer;
+}
+
+.clicked {
+  background-color: #38B6FF;
 }
 </style>

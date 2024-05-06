@@ -39,7 +39,7 @@ header {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #6366f1;
+  background-color: #38B6FF;;
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
