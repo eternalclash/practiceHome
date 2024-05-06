@@ -13,7 +13,8 @@ const getSubwayMarker = async () => {
 
 const findSubwayNear = async (lat, lng) => {
   try {
-    const response = await axios.get(`${API_URL}/subway/subwayNear?lat=${lat}&lng=${lng}`)
+    const response = await axios.get(`${API_URL}/subway/subwayInRange?lat=${lat}&lng=${lng}&distance=2000`)
+    console.log(response.data.result)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
