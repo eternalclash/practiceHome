@@ -20,7 +20,7 @@ function calculateYearlyAverage(data, area) {
   let count = 0;
 
   for (const item of data) {
-    if(area === '-1' || item.area === area){
+    if(area == '-1' || item.area == area){
       const [year] = item.dealDate.split('-');
       const dealAmount = parseFloat(item.dealAmount);
 
