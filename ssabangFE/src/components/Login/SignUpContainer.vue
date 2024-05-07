@@ -5,13 +5,16 @@
         <div class="logo"></div>
       </div>
       <div class="input-group">
-        <input type="text" placeholder="아이디" required />
+        <input type="text" v-model="name" placeholder="이름" required />
       </div>
       <div class="input-group">
-        <input type="password" placeholder="비밀번호" required />
+        <input type="text" v-model="email" placeholder="아이디 (이메일)" required />
       </div>
       <div class="input-group">
-        <input type="password" placeholder="비밀번호 재확인" required />
+        <input type="password" v-model="password" placeholder="비밀번호" required />
+      </div>
+      <div class="input-group">
+        <input type="password" v-model="confirmPassword" placeholder="비밀번호 재확인" required />
       </div>
 
       <button class="signup-button" @click="signup">회원가입</button>
@@ -21,12 +24,41 @@
 </template>
 
 <script>
+import { postSignup } from '@/api/loginAPI' // Adjust the import path as necessary
+
 export default {
   name: 'SignUpContainer',
+  data() {
+    return {
+      email: '',
+      name: '',
+      password: '',
+      confirmPassword: ''
+    }
+  },
   methods: {
-    signup() {
-      // 회원가입 로직을 여기에 추가
-      this.$router.push({ name: 'LoginContainer' })
+    async signup() {
+      if (this.password !== this.confirmPassword) {
+        alert('비밀번호가 일치하지 않습니다.')
+        return
+      }
+      try {
+        const userData = {
+          email: this.email,
+          name: this.name,
+          password: this.password
+        }
+        const result = await postSignup(userData)
+        alert('회원가입 성공!')
+        this.$router.push({ name: 'LoginContainer' })
+      } catch (error) {
+        if (error.response) {
+          // Assuming 409 Conflict for existing user
+          alert('존재하는 아이디입니다.')
+        } else {
+          alert('회원가입 중 오류가 발생했습니다.')
+        }
+      }
     },
     goToLogin() {
       this.$router.push({ name: 'LoginContainer' })
