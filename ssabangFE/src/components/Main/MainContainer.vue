@@ -79,11 +79,26 @@
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
     <div class="info-group" v-if="Object.keys(deal).length > 0">
-      <div class="apt-title">{{ deal.keyword }} <button @click="addToFavorites" class="favorite-button">찜</button></div>
-      
+      <div class="apt-title">
+        {{ deal.keyword }} <button @click="addToFavorites" class="favorite-button">찜</button>
+      </div>
+
       <div class="flex">
-        <div class="apt-size clickStyle" :class="{clicked:this.tempArea == -1}" @click="changeArea(-1)">전체</div>
-        <div class="apt-size clickStyle" :class="{clicked:this.tempArea == area}" @click="changeArea(area)" v-for="(area, index) in areas">{{ area }}㎡</div>
+        <div
+          class="apt-size clickStyle"
+          :class="{ clicked: this.tempArea == -1 }"
+          @click="changeArea(-1)"
+        >
+          전체
+        </div>
+        <div
+          class="apt-size clickStyle"
+          :class="{ clicked: this.tempArea == area }"
+          @click="changeArea(area)"
+          v-for="(area, index) in areas"
+        >
+          {{ area }}㎡
+        </div>
       </div>
       <div>
         <div class="sise">싸방시세</div>
@@ -93,9 +108,27 @@
 
       <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" />
       <div class="flex-center">
-        <div class="date-container clickStyle" :class="{clicked:this.tempYear == 1}" @click="changeYear(1)">최근1년</div>
-        <div class="date-container clickStyle" :class="{clicked:this.tempYear == 3}" @click="changeYear(3)">최근3년</div>
-        <div class="date-container clickStyle" :class="{clicked:this.tempYear == -1}" @click="changeYear(-1)">전체기간</div>
+        <div
+          class="date-container clickStyle"
+          :class="{ clicked: this.tempYear == 1 }"
+          @click="changeYear(1)"
+        >
+          최근1년
+        </div>
+        <div
+          class="date-container clickStyle"
+          :class="{ clicked: this.tempYear == 3 }"
+          @click="changeYear(3)"
+        >
+          최근3년
+        </div>
+        <div
+          class="date-container clickStyle"
+          :class="{ clicked: this.tempYear == -1 }"
+          @click="changeYear(-1)"
+        >
+          전체기간
+        </div>
       </div>
       <div class="georae">
         <div class="silgeorae">실거래가</div>
@@ -122,11 +155,11 @@
             <div>학군</div>
             <div>거리</div>
           </div>
-          <div class="list-between2">
-            <div>싸방초등학교</div>
+          <div class="list-between2" v-for="(s, index) in school" :key="index">
+            <div>{{s.name }}</div>
             <div class="column-left">
-              <div class="price">도보 10분</div>
-              <div>거리 3km</div>
+              <div class="price">{{ s.time }}</div>
+              <div>거리 {{ s.distance}}km</div>
             </div>
           </div>
         </div>
@@ -138,10 +171,10 @@
             <div>거리</div>
           </div>
           <div class="list-between2">
-            <div>싸방역</div>
+            <div>{{ subway.name }} ({{ subway.line }})</div>
             <div class="column-left">
-              <div class="price">도보 7분</div>
-              <div>거리 2km</div>
+              <div class="price">도보 {{ subway.time }}</div>
+              <div>거리 {{ subway.distance }}km</div>
             </div>
           </div>
         </div>
@@ -175,7 +208,8 @@ import {
   getApartmentMarker,
   getDongData
 } from '@/api/apartmentAPI'
-import { getSubwayMarker, findSubwayNear } from '@/api/subwayAPI'
+import { getSubwayNear, getSubwayInRange } from '@/api/subwayAPI'
+import { getSchoolNear, getSchoolInRange } from '@/api/schoolAPI'
 import { formatToKoreanCurrency, parseDate, formatAmount } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
@@ -189,6 +223,8 @@ export default {
       dongMarkers: [],
       guMarkers: [],
       apartmentMarkers: [],
+      schoolMarkers: [],
+
       searchKeyword: '',
       deals: [],
       deal: {},
@@ -198,8 +234,8 @@ export default {
 
       infomation: {
         apartmentName: '',
-        latitude : 37.5001,
-        longitude : 127.0385,
+        latitude: 37.5001,
+        longitude: 127.0385,
         allYearMaxPrice: 0,
         allYearMinPrice: 0,
         oneYearMaxPrice: 0,
@@ -214,6 +250,9 @@ export default {
       tempDeal: [], // 구간 deals
       tempYear: -1, // 구간 year
       tempArea: -1, // 구간 area
+
+      school: [],
+      subway: {},
 
       areas: [],
       highPrice: '',
@@ -239,13 +278,34 @@ export default {
     this.initMap()
     this.dongMarkers = await getDongMarker()
     this.guMarkers = await getGuMarker()
-    this.subwayMarkers = await findSubwayNear(this.lat, this.lng)
     this.updateMarkers()
   },
   components: {
     GoogleChart
   },
   methods: {
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371 // 지구의 반경(km)
+      const radLat1 = (lat1 * Math.PI) / 180 // 위도를 라디안으로 변환
+      const radLat2 = (lat2 * Math.PI) / 180
+      const deltaLat = radLat2 - radLat1
+      const deltaLon = ((lon2 - lon1) * Math.PI) / 180
+
+      const a =
+        Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+        Math.cos(radLat1) * Math.cos(radLat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      const distance = R * c
+
+      return Math.round(distance * 100) / 100 // 소수점 둘째 자리까지 반올림
+    },
+    calculateTravelTime(distance, averageSpeed) {
+      const time = distance / averageSpeed // 시간(시간 단위)
+      const hours = Math.floor(time)
+      const minutes = Math.round((time - hours) * 60)
+
+      return hours > 0 ? `${hours}시간` + `${minutes}분` : `${minutes}분`
+    },
     formatAmount,
     getSubwayMarker() {},
     toggleSearchResults() {
@@ -258,6 +318,7 @@ export default {
       this.showSearchResults = true // 검색 결과 창을 숨깁니다.
     },
     clearMarkers() {
+      console.log('clear' + this.markers.map((e) => console.log(e)))
       this.markers.forEach((m) => {
         m.marker?.setMap(null)
         m.overlay?.setMap(null)
@@ -270,9 +331,9 @@ export default {
           data?.lat || data?.latitude,
           data?.lng || data?.longitude
         )
-        const name = data?.bjdong_nm || data?.sgg_nm || data?.apartmentName || data?.name// 조건에 따라 적절한 속성 이름 사용
+        const name = data?.bjdong_nm || data?.sgg_nm || data?.apartmentName || data?.name // 조건에 따라 적절한 속성 이름 사용
         const formattedPrice =
-         ( ((data.amount ? data.amount : data.averagePrice) / 10000).toFixed(2) + '억' ) ;
+          ((data.amount ? data.amount : data.averagePrice) / 10000).toFixed(2) + '억'
         formattedPrice == NaN ? data.line : formattedPrice
         // DOM 요소 직접 생성
         const overlayElement = document.createElement('div')
@@ -297,23 +358,73 @@ export default {
         this.markers.push({ overlay })
       })
     },
-    
+
     async updateMarkers() {
       this.clearMarkers() // 기존 마커 제거
-      this.subwayMarkers = await findSubwayNear(this.lat,this.lng)
-      this.displayMarkers(this.subwayMarkers)
+      this.subwayMarkers = await getSubwayInRange(this.lat, this.lng)
+      this.schoolMarkers = await getSchoolInRange(this.lat, this.lng)
+      console.log(this.subwayMarkers)
+      console.log(this.schoolMarkers)
       if (this.map.getLevel() <= 4) {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
         this.displayMarkers(markersData)
       } else {
         // 지도의 현재 레벨에 따라 적절한 API 호출
-        const useDong = this.map.getLevel() < 6
+        const useDong = this.map.getLevel() < 7
         const markersData = useDong ? this.dongMarkers : this.guMarkers
         this.displayMarkers(markersData)
       }
+      this.displayCategoryMarkers(this.subwayMarkers)
+      this.displayCategoryMarkers(this.schoolMarkers)
     },
 
+    async displayCategoryMarkers(markersData) {
+      const markerSubway = '/src/assets/subway.png' // 마커 이미지 경로
+      const markerSchool = '/src/assets/school.png'
+      markersData.forEach((data) => {
+        console.log('data' + data)
+        const position = new kakao.maps.LatLng(
+          data?.lat || data?.latitude,
+          data?.lng || data?.longitude
+        )
+
+        const overlayElement = document.createElement('div')
+        overlayElement.className = 'overlay-info2'
+        overlayElement.innerHTML = `
+        <img src="${data.line ? markerSubway : markerSchool}" alt="Subway Icon" style="width: 24px; height: 24px;">
+      <div class="overlay-text">${data.name}</div>
+      ${data.line ? `<div class="overlay-number">${data.line}</div>` : ''}
+        `
+
+        const overlay = new kakao.maps.CustomOverlay({
+          content: overlayElement,
+          map: this.map,
+          position,
+          yAnchor: 1,
+          zIndex: 3
+        })
+        overlay.setMap(this.map) // Initially hide the overlay
+
+        // // 마커에 마우스오버 이벤트를 등록합니다
+        // kakao.maps.event.addListener(marker, 'mouseover', () => {
+        //   overlay.setMap(this.map)
+        // })
+
+        // // 마커에 마우스아웃 이벤트를 등록합니다
+        // kakao.maps.event.addListener(marker, 'mouseout', () => {
+        //   overlay.setMap(null)
+        // })
+
+        this.markers.push({ overlay })
+      })
+    },
+    handelUpdateMarkers(event) {
+      clearTimeout(this.inputTimer)
+      this.inputTimer = setTimeout(() => {
+        this.updateMarkers()
+      }, 500)
+    },
     handleInput(event) {
       clearTimeout(this.inputTimer)
       const value = event.target.value
@@ -329,14 +440,36 @@ export default {
         if (deal.type == 'APARTMENT' || deal.apartmentName) {
           console.log('deal' + deal)
           this.infomation = await getApartmentData(deal?.keyword || deal?.apartmentName)
+          this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
+          this.subway.distance = this.calculateDistance(
+            this.infomation.latitude,
+            this.infomation.longitude,
+            this.subway.lat,
+            this.subway.lng
+          )
+          this.subway.time = this.calculateTravelTime(this.subway.distance, 4.8)
+          this.school = await getSchoolNear(this.infomation.latitude, this.infomation.longitude)
+          for (let s of this.school) {
+            s.distance = this.calculateDistance(
+              this.infomation.latitude,
+              this.infomation.longitude,
+              s.lat,
+              s.lng
+            )
+            s.time = this.calculateTravelTime(s.distance, 4.8)
+          }
+
+          for(let s of this.school) {
+            console.log(s)
+          }
 
           this.deal = deal
 
           this.tempYear = '-1'
           this.tempArea = '-1'
 
-          this.drawChartSection();
-          
+          this.drawChartSection()
+
           // 지도 중심을 업데이트하는 로직 추가
           if (this.map && this.infomation.latitude && this.infomation.longitude) {
             this.map.setCenter(
@@ -363,15 +496,15 @@ export default {
       let totalPrice = 0
       this.chartData = []
 
-      let returnData = [];
+      let returnData = []
       if (this.tempYear == -1) {
-        console.log("info"+this.infomation.allYear)
-        for(let x of this.infomation.allYear) {
+        console.log('info' + this.infomation.allYear)
+        for (let x of this.infomation.allYear) {
           console.log(x)
         }
-        console.log(this.tempArea,"<<<<<<<<<<<<<")
-        returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea) 
-        console.log(returnData);
+        console.log(this.tempArea, '<<<<<<<<<<<<<')
+        returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
+        console.log(returnData)
         this.chartData = returnData[0]
         this.tempDeal = returnData[1]
       } else if (this.tempYear == 1) {
@@ -392,11 +525,11 @@ export default {
         if (low > dealAmountNumeric) low = dealAmountNumeric
       }
 
-      if(this.tempYear == -1){
+      if (this.tempYear == -1) {
         this.chartData.unshift(['Month', '실거래가'])
-      } else if(this.tempYear == 1){
+      } else if (this.tempYear == 1) {
         this.chartData.unshift(['Month', '실거래가'])
-      } else if(this.tempYear == 3){
+      } else if (this.tempYear == 3) {
         this.chartData.unshift(['Month', '실거래가'])
       }
       this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
@@ -407,12 +540,12 @@ export default {
     },
 
     changeArea(area) {
-      this.tempArea = area;
-      this.drawChartSection();
+      this.tempArea = area
+      this.drawChartSection()
     },
     changeYear(year) {
-      this.tempYear = year;
-      this.drawChartSection();
+      this.tempYear = year
+      this.drawChartSection()
     },
 
     displayApartmentMarkers(apartmentData) {
@@ -466,43 +599,67 @@ export default {
     },
 
     initMap() {
-      const mapContainer = document.getElementById('map') // 지도를 표시할 div
+      const mapContainer = document.getElementById('map')
       const mapOption = {
-        center: new kakao.maps.LatLng(this.lat, this.lng), // 지도의 중심좌표
+        center: new kakao.maps.LatLng(this.lat, this.lng),
         level: 3
       }
 
       this.map = new kakao.maps.Map(mapContainer, mapOption)
 
+      kakao.maps.event.addListener(this.map, 'tilesloaded', () => {
+        this.addEventListeners()
+      })
+    },
+    addEventListeners() {
       kakao.maps.event.addListener(this.map, 'dragend', () => {
-        // 지도의 새 중심 좌표를 가져와서 저장
         const center = this.map.getCenter()
         this.lat = center.getLat()
         this.lng = center.getLng()
-
-        // 마커 업데이트 함수 호출
-        this.updateMarkers()
+        this.clearMarkers()
+        this.handelUpdateMarkers()
       })
-
-      // 확대/축소 이벤트 리스너
-      kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
+      kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+        const center = this.map.getCenter()
+        this.lat = center.getLat()
+        this.lng = center.getLng()
+        this.clearMarkers()
+        this.handelUpdateMarkers()
+      })
     },
 
     // chartSection의 찜하기 버트 api호출
     async addToFavorites() {
       try {
-        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`);
-        console.log("서버 응답:", response.data);
+        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`)
+        console.log('서버 응답:', response.data)
       } catch (error) {
-        console.error("요청 실패:", error);
+        console.error('요청 실패:', error)
       }
-    },
+    }
   }
 }
 </script>
 <style>
 .overlay-info {
   background-color: #38b6ff;
+  z-index: 2;
+  overflow: visible !important;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  -webkit-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
+  padding: 0% 0.5vw;
+  pointer-events: auto;
+}
+.overlay-info2 {
+  background-color: white;
   z-index: 2;
   overflow: visible !important;
   text-align: center;
@@ -694,7 +851,7 @@ export default {
 .favorite-button {
   padding: 10px;
   font-size: 16px;
-  background-color: #38B6FF;
+  background-color: #38b6ff;
   color: white;
   border: none;
   border-radius: 5px;
@@ -711,6 +868,6 @@ export default {
 }
 
 .clicked {
-  background-color: #38B6FF;
+  background-color: #38b6ff;
 }
 </style>
