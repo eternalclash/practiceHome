@@ -5,10 +5,10 @@
         <div class="logo"></div>
       </div>
       <div class="input-group">
-        <input type="text" placeholder="아이디" required />
+        <input v-model="username" type="text" placeholder="아이디" required />
       </div>
       <div class="input-group">
-        <input type="password" placeholder="비밀번호" required />
+        <input v-model="password" type="password" placeholder="비밀번호" required />
       </div>
       <button class="login-button" @click="login">로그인</button>
       <button class="signup-button" @click="goToSignUp">회원가입</button>
@@ -17,12 +17,33 @@
 </template>
 
 <script>
+import { postLogin } from '@/api/loginAPI' // assuming path to your auth functions
+
 export default {
   name: 'LoginContainer',
+  data() {
+    return {
+      username: '',
+      password: ''
+    }
+  },
   methods: {
-    login() {
-      // 로그인 로직을 여기에 추가
-      this.$router.push({ name: 'MainContainer' })
+    async login() {
+      try {
+        const userData = {
+          email: this.username,
+          password: this.password
+        }
+        await postLogin(userData)
+        alert('로그인되었습니다')
+        this.$router.push({ name: 'MainContainer' })
+      } catch (error) {
+        if (error.response) {
+          alert('아이디 또는 비밀번호가 잘못되었습니다.')
+        } else {
+          alert('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+        }
+      }
     },
     goToSignUp() {
       this.$router.push({ name: 'SignUpContainer' })
@@ -38,7 +59,7 @@ export default {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #2462B9; /* 변경 */
+  background-color: #2462b9; /* 변경 */
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -89,7 +110,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #CAE5FF; /* 변경 */
+  background-color: #cae5ff; /* 변경 */
   opacity: 0.5; /* 이미지의 투명도 (이미지를 보이게 하기 위해 적당한 투명도 선택) */
 }
 

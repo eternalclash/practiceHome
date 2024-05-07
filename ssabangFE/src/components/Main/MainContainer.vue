@@ -80,7 +80,11 @@
     </div>
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
-        {{ deal.keyword }} <button @click="addToFavorites" class="favorite-button">찜</button>
+        {{ infomation.apartmentName }}
+        <button v-if="infomation.isLiked == false" @click="addToFavorites" class="favorite-button">
+          찜 하기
+        </button>
+        <button v-else class="notfavorite-button">찜 완료</button>
       </div>
 
       <div class="flex">
@@ -156,10 +160,10 @@
             <div>거리</div>
           </div>
           <div class="list-between2" v-for="(s, index) in school" :key="index">
-            <div>{{s.name }}</div>
+            <div>{{ s.name }}</div>
             <div class="column-left">
               <div class="price">{{ s.time }}</div>
-              <div>거리 {{ s.distance}}km</div>
+              <div>거리 {{ s.distance }}km</div>
             </div>
           </div>
         </div>
@@ -213,6 +217,7 @@ import { getSchoolNear, getSchoolInRange } from '@/api/schoolAPI'
 import { formatToKoreanCurrency, parseDate, formatAmount } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
+import { postZzim, getZzim } from '@/api/zzimAPI'
 export default {
   name: 'MainContainer',
   data() {
@@ -284,6 +289,17 @@ export default {
     GoogleChart
   },
   methods: {
+    async addToFavorites() {
+      try {
+        // Here we use 'apartmentName' assuming it is the unique identifier for the building
+
+        await postZzim(this.infomation.apartmentName)
+        alert('찜 목록에 추가되었습니다.')
+      } catch (error) {
+        console.error('Error adding to favorites:', error)
+        alert('찜 추가 중 오류가 발생했습니다.')
+      }
+    },
     calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371 // 지구의 반경(km)
       const radLat1 = (lat1 * Math.PI) / 180 // 위도를 라디안으로 변환
@@ -459,7 +475,7 @@ export default {
             s.time = this.calculateTravelTime(s.distance, 4.8)
           }
 
-          for(let s of this.school) {
+          for (let s of this.school) {
             console.log(s)
           }
 
@@ -853,6 +869,16 @@ export default {
   font-size: 16px;
   background-color: #38b6ff;
   color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  outline: none;
+}
+.notfavorite-button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: white;
+  color: black;
   border: none;
   border-radius: 5px;
   cursor: pointer;
