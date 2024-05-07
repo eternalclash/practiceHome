@@ -127,7 +127,8 @@ import {
   getApartmentMarker,
   getDongData
 } from '@/api/apartmentAPI'
-import { getSubwayMarker, findSubwayNear } from '@/api/subwayAPI'
+import { getSubwayNear, getSubwayInRange } from '@/api/subwayAPI'
+import { getSchoolNear, getSchoolInRange } from '@/api/schoolAPI'
 import { formatToKoreanCurrency, parseDate, formatAmount } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 export default {
@@ -140,6 +141,8 @@ export default {
       dongMarkers: [],
       guMarkers: [],
       apartmentMarkers: [],
+      schoolMarkers: [],
+
       searchKeyword: '',
       deals: [],
       deal: {},
@@ -181,9 +184,10 @@ export default {
   },
   async mounted() {
     this.initMap()
-    this.dongMarkers = await getDongMarker()
-    this.guMarkers = await getGuMarker()
-    this.subwayMarkers = await findSubwayNear(this.lat, this.lng)
+    // this.dongMarkers = await getDongMarker()
+    // this.guMarkers = await getGuMarker()
+    // this.subwayMarkers = await getSubwayInRange(this.lat, this.lng)
+    // this.schoolMarkers = await getSchoolInRange(this.lat, this.lng)
     this.updateMarkers()
   },
   components: {
@@ -202,6 +206,7 @@ export default {
       this.showSearchResults = true // 검색 결과 창을 숨깁니다.
     },
     clearMarkers() {
+      console.log('clear' + this.markers.map((e) => console.log(e)))
       this.markers.forEach((m) => {
         m.marker?.setMap(null)
         m.overlay?.setMap(null)
@@ -214,9 +219,9 @@ export default {
           data?.lat || data?.latitude,
           data?.lng || data?.longitude
         )
-        const name = data?.bjdong_nm || data?.sgg_nm || data?.apartmentName || data?.name// 조건에 따라 적절한 속성 이름 사용
+        const name = data?.bjdong_nm || data?.sgg_nm || data?.apartmentName || data?.name // 조건에 따라 적절한 속성 이름 사용
         const formattedPrice =
-         ( ((data.amount ? data.amount : data.averagePrice) / 10000).toFixed(2) + '억' ) ;
+          ((data.amount ? data.amount : data.averagePrice) / 10000).toFixed(2) + '억'
         formattedPrice == NaN ? data.line : formattedPrice
         // DOM 요소 직접 생성
         const overlayElement = document.createElement('div')
@@ -241,11 +246,13 @@ export default {
         this.markers.push({ overlay })
       })
     },
-    
+
     async updateMarkers() {
       this.clearMarkers() // 기존 마커 제거
-      this.subwayMarkers = await findSubwayNear(this.lat,this.lng)
-      this.displayMarkers(this.subwayMarkers)
+      this.subwayMarkers = await getSubwayInRange(this.lat, this.lng)
+      this.schoolMarkers = await getSchoolInRange(this.lat, this.lng)
+      console.log(this.subwayMarkers)
+      console.log(this.schoolMarkers)
       if (this.map.getLevel() <= 4) {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
@@ -256,8 +263,56 @@ export default {
         const markersData = useDong ? this.dongMarkers : this.guMarkers
         this.displayMarkers(markersData)
       }
+      this.displayCategoryMarkers(this.subwayMarkers)
+      this.displayCategoryMarkers(this.schoolMarkers)
     },
 
+    async displayCategoryMarkers(markersData) {
+      const markerSubway = '/src/assets/subway.png' // 마커 이미지 경로
+      const markerSchool = '/src/assets/school.png'
+      markersData.forEach((data) => {
+        console.log('data' + data)
+        const position = new kakao.maps.LatLng(
+          data?.lat || data?.latitude,
+          data?.lng || data?.longitude
+        )
+
+        const overlayElement = document.createElement('div')
+        overlayElement.className = 'overlay-info2'
+        overlayElement.innerHTML = `
+        <img src="${data.line ? markerSubway : markerSchool}" alt="Subway Icon" style="width: 24px; height: 24px;">
+      <div class="overlay-text">${data.name}</div>
+      ${data.line ? `<div class="overlay-number">${data.line}</div>` : ''}
+        `
+
+        const overlay = new kakao.maps.CustomOverlay({
+          content: overlayElement,
+          map: this.map,
+          position,
+          yAnchor: 1,
+          zIndex: 3
+        })
+        overlay.setMap(this.map) // Initially hide the overlay
+
+        // // 마커에 마우스오버 이벤트를 등록합니다
+        // kakao.maps.event.addListener(marker, 'mouseover', () => {
+        //   overlay.setMap(this.map)
+        // })
+
+        // // 마커에 마우스아웃 이벤트를 등록합니다
+        // kakao.maps.event.addListener(marker, 'mouseout', () => {
+        //   overlay.setMap(null)
+        // })
+
+        this.markers.push({ overlay })
+      })
+    },
+    handelUpdateMarkers(event) {
+      clearTimeout(this.inputTimer)
+      this.inputTimer = setTimeout(() => {
+        this.updateMarkers()
+      }, 500)
+    },
     handleInput(event) {
       clearTimeout(this.inputTimer)
       const value = event.target.value
@@ -379,25 +434,26 @@ export default {
     },
 
     initMap() {
-      const mapContainer = document.getElementById('map') // 지도를 표시할 div
+      const mapContainer = document.getElementById('map')
       const mapOption = {
-        center: new kakao.maps.LatLng(this.lat, this.lng), // 지도의 중심좌표
+        center: new kakao.maps.LatLng(this.lat, this.lng),
         level: 3
       }
 
       this.map = new kakao.maps.Map(mapContainer, mapOption)
 
+      kakao.maps.event.addListener(this.map, 'tilesloaded', () => {
+        this.addEventListeners()
+      })
+    },
+    addEventListeners() {
       kakao.maps.event.addListener(this.map, 'dragend', () => {
-        // 지도의 새 중심 좌표를 가져와서 저장
         const center = this.map.getCenter()
         this.lat = center.getLat()
         this.lng = center.getLng()
-
-        // 마커 업데이트 함수 호출
-        this.updateMarkers()
+        this.clearMarkers()
+        this.handelUpdateMarkers()
       })
-
-      // 확대/축소 이벤트 리스너
       kakao.maps.event.addListener(this.map, 'zoom_changed', this.updateMarkers)
     }
   }
@@ -406,6 +462,23 @@ export default {
 <style>
 .overlay-info {
   background-color: #38b6ff;
+  z-index: 2;
+  overflow: visible !important;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  -webkit-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 1px 1px 2px 1px rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  border-radius: 3px;
+  padding: 0% 0.5vw;
+  pointer-events: auto;
+}
+.overlay-info2 {
+  background-color: white;
   z-index: 2;
   overflow: visible !important;
   text-align: center;
