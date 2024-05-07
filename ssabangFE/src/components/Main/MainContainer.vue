@@ -163,7 +163,11 @@
             <div>{{ s.name }}</div>
             <div class="column-left">
               <div class="price">{{ s.time }}</div>
+<<<<<<< HEAD
               <div>거리 {{ s.distance }}km</div>
+=======
+              <div>거리 {{ s.distance}}km</div>
+>>>>>>> 80dd603bc106a11874eb0fb8ce4fa3c23e56346a
             </div>
           </div>
         </div>
