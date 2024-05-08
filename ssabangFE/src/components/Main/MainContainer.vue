@@ -91,7 +91,7 @@
               @click="handleApartment(deal)"
             >
               <img
-                src="./src/assets/apartment.png"
+                src="../../assets/apartment.png"
                 v-if="deal.type == 'APARTMENT'"
                 alt="Apartment Icon"
                 style="width: 12px; height: 12px"
@@ -114,17 +114,12 @@
     </div>
 
     <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck">
-      <div class="top-box" v-for="(topList, index) in topLists" :key="index">
+      <div class="top-box" v-for="(topList, index) in topLists" :key="index" >
         <h2 class="box-title">{{ topList.title }}</h2>
         <!-- <ol class="list-group">
           <li v-for="(item, i) in topList.items" :key="i" class="list-item">{{ `${item[0]} - ${item[1]}`}}</li>
         </ol> -->
-        <GoogleChart
-          :data="topList.chartData"
-          :options="topList.chartOptions"
-          :type="topList.chartType"
-          style="width: 110%; height: 200px"
-        />
+        <GoogleChart :data="topList.chartData" :options="topList.chartOptions" :type="topList.chartType" style="width: 110%; height: 200px;"/>
       </div>
     </div>
 
@@ -191,12 +186,7 @@
         <div>평균 {{ this.avgPrice }}/3.3㎡</div>
       </div>
 
-      <GoogleChart
-        :data="chartData"
-        :options="chartOptions"
-        :type="chartType"
-        style="width: 110%; height: 200px"
-      />
+      <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" style="width: 110%; height: 200px;" />
       <div class="flex-center">
         <div
           class="date-container clickStyle"
@@ -221,7 +211,10 @@
         </div>
       </div>
       <div class="georae">
-        <div class="silgeorae">실거래가</div>
+        <div class="silgeorae">
+          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px;  margin-right: 1%;" />
+          <div>실거래가</div>
+        </div>
         <div class="list-between">
           <div>계약일</div>
           <div>실거래정보</div>
@@ -240,7 +233,10 @@
       </div>
       <div class="convenience">
         <div>
-          <div class="silgeorae">학군정보</div>
+          <div class="silgeorae">
+            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+            <div>학군정보</div>
+          </div>
           <div class="list-between">
             <div>학군</div>
             <div>거리</div>
@@ -255,7 +251,10 @@
         </div>
 
         <div>
-          <div class="silgeorae">역세권정보</div>
+          <div class="silgeorae">
+            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+              <div>역세권정보</div>
+            </div>
           <div class="list-between">
             <div>역</div>
             <div>거리</div>
@@ -393,7 +392,7 @@ export default {
           },
           chartType: 'ColumnChart'
         }
-      ]
+      ],
     }
   },
   async mounted() {
@@ -504,14 +503,14 @@ export default {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
         this.displayMarkers(markersData)
+        this.displayCategoryMarkers(this.subwayMarkers)
+        this.displayCategoryMarkers(this.schoolMarkers)
       } else {
         // 지도의 현재 레벨에 따라 적절한 API 호출
         const useDong = this.map.getLevel() < 7
         const markersData = useDong ? this.dongMarkers : this.guMarkers
         this.displayMarkers(markersData)
       }
-      this.displayCategoryMarkers(this.subwayMarkers)
-      this.displayCategoryMarkers(this.schoolMarkers)
     },
 
     async displayCategoryMarkers(markersData) {
@@ -544,36 +543,26 @@ export default {
       })
     },
     updateTopLists() {
-      this.guMarkers.sort((a, b) => a.amount - b.amount)
-      this.dongMarkers.sort((a, b) => a.amount - b.amount)
+      this.guMarkers.sort((a, b) => a.amount - b.amount);
+      this.dongMarkers.sort((a, b) => a.amount - b.amount);
 
       // 비싼 구 5개
-      this.topLists[0].items = this.guMarkers
-        .slice(-5)
-        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
-        .reverse()
-      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items]
+      this.topLists[0].items = this.guMarkers.slice(-5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
+      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items];
 
       // 싼 구 5개
-      this.topLists[1].items = this.guMarkers
-        .slice(0, 5)
-        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
-      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items]
+      this.topLists[1].items = this.guMarkers.slice(0, 5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
+      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items];
 
       // 비싼 동 5개
-      this.topLists[2].items = this.dongMarkers
-        .slice(-5)
-        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
-        .reverse()
-      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items]
+      this.topLists[2].items = this.dongMarkers.slice(-5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
+      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items];
 
       // 싼 동 5개
-      this.topLists[3].items = this.dongMarkers
-        .slice(0, 5)
-        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
-      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items]
-
-      this.topLoadingCheck = true
+      this.topLists[3].items = this.dongMarkers.slice(0, 5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
+      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items];
+    
+      this.topLoadingCheck = true;
     },
 
     handelUpdateMarkers(event) {
@@ -603,7 +592,7 @@ export default {
           this.subway.distance = this.calculateDistance(
             this.infomation.latitude,
             this.infomation.longitude,
-            this.subway.lat,
+            this.subway.lat, 
             this.subway.lng
           )
           this.subway.time = this.calculateTravelTime(this.subway.distance, 4.8)
@@ -653,39 +642,40 @@ export default {
 
       let returnData = []
       if (this.tempYear == -1) {
-        if (this.infomation.allYear != undefined) {
+        if(this.infomation.allYear != undefined){
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-          if (returnData != []) {
+          if(returnData[1].length != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1]
+            this.tempDeal = returnData[1] 
             this.chartData.unshift(['Year', '실거래가'])
-          } else {
+          } else{
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 1) {
-        if (this.infomation.oneYear != undefined) {
+        if(this.infomation.oneYear != undefined){
           returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-          if (returnData != []) {
+          if(returnData[1].length != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1]
+            this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
-          } else {
-            alert('해당 기간 거래내역이 없습니다.222')
+          } else{
+            alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 3) {
-        if (this.infomation.threeYear != undefined) {
+        if(this.infomation.threeYear != undefined){
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
-          if (returnData != []) {
+          if(returnData[1].length != []) {
+            console.log('returnData',returnData)
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1]
+            this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
-          } else {
+          } else{
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
@@ -947,6 +937,8 @@ export default {
 .silgeorae {
   margin-top: 2vh;
   font-weight: 700;
+  display: flex;
+  align-items: center;
 }
 .flex-center {
   display: flex;
