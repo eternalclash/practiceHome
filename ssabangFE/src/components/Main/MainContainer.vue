@@ -240,6 +240,7 @@ import { getSchoolNear, getSchoolInRange } from '@/api/schoolAPI'
 import { formatToKoreanCurrency, parseDate, formatAmount } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
+import { calculateHalfAverage } from './changSectionHalf'
 import { postZzim, getZzim } from '@/api/zzimAPI'
 export default {
   name: 'MainContainer',
@@ -552,7 +553,7 @@ export default {
           this.subway.distance = this.calculateDistance(
             this.infomation.latitude,
             this.infomation.longitude,
-            this.subway.lat,
+            this.subway.lat, 
             this.subway.lng
           )
           this.subway.time = this.calculateTravelTime(this.subway.distance, 4.8)
@@ -602,21 +603,47 @@ export default {
       let low = Number.MAX_SAFE_INTEGER
       let totalArea = 0
       let totalPrice = 0
-      this.chartData = []
 
       let returnData = []
       if (this.tempYear == -1) {
-        returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if(this.infomation.allYear != undefined){
+          returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
+          if(returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1] 
+            this.chartData.unshift(['Year', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       } else if (this.tempYear == 1) {
-        returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if(this.infomation.oneYear != undefined){
+          returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
+          if(returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1] 
+            this.chartData.unshift(['Month', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.222')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       } else if (this.tempYear == 3) {
-        returnData = calculateYearlyAverage(this.infomation.threeYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if(this.infomation.threeYear != undefined){
+          returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
+          if(returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1] 
+            this.chartData.unshift(['Month', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       }
 
       for (let info of this.tempDeal) {
@@ -627,13 +654,6 @@ export default {
         if (low > dealAmountNumeric) low = dealAmountNumeric
       }
 
-      if (this.tempYear == -1) {
-        this.chartData.unshift(['Year', '실거래가'])
-      } else if (this.tempYear == 1) {
-        this.chartData.unshift(['Month', '실거래가'])
-      } else if (this.tempYear == 3) {
-        this.chartData.unshift(['Year', '실거래가'])
-      }
       this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
       this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
 
