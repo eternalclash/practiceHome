@@ -1,5 +1,6 @@
 // axiosClient.js
 import axios from 'axios'
+import { takeException } from './exception'
 
 // Axios 인스턴스 생성
 const axiosClient = axios.create({
@@ -16,6 +17,7 @@ axiosClient.interceptors.request.use(
     return config
   },
   (error) => {
+    takeException();
     return Promise.reject(error)
   }
 )

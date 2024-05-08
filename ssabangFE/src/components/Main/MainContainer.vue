@@ -60,10 +60,9 @@
       <button class="close-button" @click="toggleSearchResults">
         {{ showSearchResults ? '▲' : '▼' }}
       </button>
-      <div style="display: flex; height: 3vh; justify-content: center; align-items: center">
+      <div style="display: flex; flex-direction: column; width: 100%">
         <div
           style="
-            width: 100%;
             height: 3vh;
             margin: 0;
             border: 1px solid;
@@ -75,8 +74,7 @@
             cursor: pointer;
           "
           id="search-input"
-          placeholder="검색..."
-          @keyup.enter="searchPlace"
+          @click="toggleZzimResults"
         >
           아파트 찜목록 보기
         </div>
@@ -85,24 +83,24 @@
           class="search-results"
           style="background-color: white; position: relative"
         >
-          <div v-if="deals && deals.length > 0">
+          <div v-if="zzimList.length > 0">
             <div
-              v-for="(deal, index) in deals"
+              v-for="(deal, index) in zzimList"
               :key="index"
               class="deal-item"
               @click="handleApartment(deal)"
             >
               <img
-                src="./src/assets.apratment.png"
+                src="./src/assets/apartment.png"
                 v-if="deal.type == 'APARTMENT'"
                 alt="Apartment Icon"
                 style="width: 12px; height: 12px"
               />
-              {{ deal.keyword }}
+              {{ deal.buildingName }}
             </div>
           </div>
           <div v-else>
-            <div class="deal-item">검색결과가 존재하지 않습니다.</div>
+            <div class="deal-item">찜 목록이 비어 있습니다.</div>
           </div>
         </div>
       </div>
@@ -116,48 +114,89 @@
     </div>
 
     <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck">
-      <div class="top-box" v-for="(topList, index) in topLists" :key="index" >
+      <div class="top-box" v-for="(topList, index) in topLists" :key="index">
         <h2 class="box-title">{{ topList.title }}</h2>
         <!-- <ol class="list-group">
           <li v-for="(item, i) in topList.items" :key="i" class="list-item">{{ `${item[0]} - ${item[1]}`}}</li>
         </ol> -->
-        <GoogleChart :data="topList.chartData" :options="topList.chartOptions" :type="topList.chartType" style="width: 110%; height: 200px;"/>
+        <GoogleChart
+          :data="topList.chartData"
+          :options="topList.chartOptions"
+          :type="topList.chartType"
+          style="width: 110%; height: 200px"
+        />
       </div>
     </div>
 
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
-        <button v-if="infomation.isLiked != true" @click="addToFavorites" class="favorite-button">
+        <button
+          v-if="zzimCheck == false"
+          @click="addZzim(infomation.apartmentName)"
+          class="favorite-button"
+        >
           찜 하기
         </button>
-        <button v-else class="notfavorite-button">찜 완료</button>
+        <button v-else class="notfavorite-button" @click="deleteZzim(infomation.apartmentName)">
+          찜 완료
+        </button>
       </div>
 
-      <div class="flex">
-        <div
-          class="apt-size clickStyle"
-          :class="{ clicked: this.tempArea == -1 }"
-          @click="changeArea(-1)"
-        >
-          전체
-        </div>
-        <div
-          class="apt-size clickStyle"
-          :class="{ clicked: this.tempArea == area }"
-          @click="changeArea(area)"
-          v-for="(area, index) in areas"
-        >
-          {{ area }}㎡
+      <div style="max-width: 100%; min-height: 60px; overflow-x: auto; display: flex">
+        <div style="display: flex; min-height: 60px">
+          <div
+            style="
+              flex-shrink: 0;
+              min-width: 100px;
+              padding: 10px;
+              box-sizing: border-box;
+              border: 2px solid #fafafb;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              font-size: 1.1rem;
+            "
+            class="clickStyle"
+            :class="{ clicked: this.tempArea == -1 }"
+            @click="changeArea(-1)"
+          >
+            전체
+          </div>
+          <div
+            style="
+              flex-shrink: 0;
+              min-width: 100px;
+              padding: 10px;
+              box-sizing: border-box;
+              border: 2px solid #fafafb;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              font-size: 1.1rem;
+            "
+            class="clickStyle"
+            :class="{ clicked: this.tempArea == area }"
+            @click="changeArea(area)"
+            v-for="(area, index) in areas"
+          >
+            {{ area }}㎡
+          </div>
         </div>
       </div>
+
       <div>
         <div class="sise">싸방시세</div>
         <div class="mame">매매 {{ this.lowPrice }} ~ {{ this.highPrice }}</div>
         <div>평균 {{ this.avgPrice }}/3.3㎡</div>
       </div>
 
-      <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" style="width: 110%; height: 200px;" />
+      <GoogleChart
+        :data="chartData"
+        :options="chartOptions"
+        :type="chartType"
+        style="width: 110%; height: 200px"
+      />
       <div class="flex-center">
         <div
           class="date-container clickStyle"
@@ -262,7 +301,7 @@ export default {
       guMarkers: [],
       apartmentMarkers: [],
       schoolMarkers: [],
-
+      zzimList: [],
       searchKeyword: '',
       deals: [],
       deal: {},
@@ -310,8 +349,8 @@ export default {
       chartType: 'LineChart',
       markers: [],
       showSearchResults: false,
-      showZzimResults:false,
-
+      showZzimResults: false,
+      zzimCheck: false,
       topLoadingCheck: false,
       topLists: [
         {
@@ -354,7 +393,7 @@ export default {
           },
           chartType: 'ColumnChart'
         }
-      ],
+      ]
     }
   },
   async mounted() {
@@ -363,6 +402,7 @@ export default {
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
     this.updateTopLists()
+    this.getZzim() // Load the zzim list on component mount
   },
   components: {
     GoogleChart
@@ -412,8 +452,10 @@ export default {
     openSearchResults() {
       this.showSearchResults = true // 검색 결과 창을 숨깁니다.
     },
+    toggleZzimResults() {
+      this.showZzimResults = !this.showZzimResults
+    },
     clearMarkers() {
-      console.log('clear' + this.markers.map((e) => console.log(e)))
       this.markers.forEach((m) => {
         m.marker?.setMap(null)
         m.overlay?.setMap(null)
@@ -434,8 +476,8 @@ export default {
         const overlayElement = document.createElement('div')
         overlayElement.className = 'overlay-info'
         overlayElement.innerHTML = `
-      <div class="overlay-text">${name}</div>
-      <div class="overlay-number">${formattedPrice}</div>
+      <div class="overlay-number">${name}</div>
+  
     `
 
         // 클릭 이벤트 리스너 직접 추가
@@ -458,8 +500,6 @@ export default {
       this.clearMarkers() // 기존 마커 제거
       this.subwayMarkers = await getSubwayInRange(this.lat, this.lng)
       this.schoolMarkers = await getSchoolInRange(this.lat, this.lng)
-      console.log(this.subwayMarkers)
-      console.log(this.schoolMarkers)
       if (this.map.getLevel() <= 4) {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
@@ -478,7 +518,6 @@ export default {
       const markerSubway = '/src/assets/subway.png' // 마커 이미지 경로
       const markerSchool = '/src/assets/school.png'
       markersData.forEach((data) => {
-        console.log('data' + data)
         const position = new kakao.maps.LatLng(
           data?.lat || data?.latitude,
           data?.lng || data?.longitude
@@ -501,40 +540,40 @@ export default {
         })
         overlay.setMap(this.map) // Initially hide the overlay
 
-        // // 마커에 마우스오버 이벤트를 등록합니다
-        // kakao.maps.event.addListener(marker, 'mouseover', () => {
-        //   overlay.setMap(this.map)
-        // })
-
-        // // 마커에 마우스아웃 이벤트를 등록합니다
-        // kakao.maps.event.addListener(marker, 'mouseout', () => {
-        //   overlay.setMap(null)
-        // })
-
         this.markers.push({ overlay })
       })
     },
     updateTopLists() {
-      this.guMarkers.sort((a, b) => a.amount - b.amount);
-      this.dongMarkers.sort((a, b) => a.amount - b.amount);
+      this.guMarkers.sort((a, b) => a.amount - b.amount)
+      this.dongMarkers.sort((a, b) => a.amount - b.amount)
 
       // 비싼 구 5개
-      this.topLists[0].items = this.guMarkers.slice(-5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
-      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items];
+      this.topLists[0].items = this.guMarkers
+        .slice(-5)
+        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+        .reverse()
+      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items]
 
       // 싼 구 5개
-      this.topLists[1].items = this.guMarkers.slice(0, 5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
-      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items];
+      this.topLists[1].items = this.guMarkers
+        .slice(0, 5)
+        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items]
 
       // 비싼 동 5개
-      this.topLists[2].items = this.dongMarkers.slice(-5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
-      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items];
+      this.topLists[2].items = this.dongMarkers
+        .slice(-5)
+        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+        .reverse()
+      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items]
 
       // 싼 동 5개
-      this.topLists[3].items = this.dongMarkers.slice(0, 5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
-      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items];
-    
-      this.topLoadingCheck = true;
+      this.topLists[3].items = this.dongMarkers
+        .slice(0, 5)
+        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items]
+
+      this.topLoadingCheck = true
     },
 
     handelUpdateMarkers(event) {
@@ -554,15 +593,17 @@ export default {
     },
     async handleApartment(deal) {
       try {
-        console.log(deal)
-        if (deal.type == 'APARTMENT' || deal.apartmentName) {
-          console.log('deal' + deal)
-          this.infomation = await getApartmentData(deal?.keyword || deal?.apartmentName)
+        if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
+          this.infomation = await getApartmentData(
+            deal?.keyword || deal?.apartmentName || deal?.buildingName
+          )
+          console.log(this.infomation)
+          this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
           this.subway.distance = this.calculateDistance(
             this.infomation.latitude,
             this.infomation.longitude,
-            this.subway.lat, 
+            this.subway.lat,
             this.subway.lng
           )
           this.subway.time = this.calculateTravelTime(this.subway.distance, 4.8)
@@ -575,10 +616,6 @@ export default {
               s.lng
             )
             s.time = this.calculateTravelTime(s.distance, 4.8)
-          }
-
-          for (let s of this.school) {
-            console.log(s)
           }
 
           this.deal = deal
@@ -600,6 +637,7 @@ export default {
           }
         } else {
           this.infomation = await getDongData(deal.keyword)
+          this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.displayApartmentMarkers(this.infomation)
         }
       } catch (e) {
@@ -615,11 +653,11 @@ export default {
 
       let returnData = []
       if (this.tempYear == -1) {
-        if(this.infomation.allYear != undefined){
+        if (this.infomation.allYear != undefined) {
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-          if(returnData != []) {
+          if (returnData != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Year', '실거래가'])
           } else {
             alert('해당 기간 거래내역이 없습니다.')
@@ -628,11 +666,11 @@ export default {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 1) {
-        if(this.infomation.oneYear != undefined){
+        if (this.infomation.oneYear != undefined) {
           returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-          if(returnData != []) {
+          if (returnData != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Month', '실거래가'])
           } else {
             alert('해당 기간 거래내역이 없습니다.222')
@@ -641,11 +679,11 @@ export default {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 3) {
-        if(this.infomation.threeYear != undefined){
+        if (this.infomation.threeYear != undefined) {
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
-          if(returnData != []) {
+          if (returnData != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Month', '실거래가'])
           } else {
             alert('해당 기간 거래내역이 없습니다.')
@@ -684,6 +722,7 @@ export default {
       apartmentData.forEach((data, index) => {
         const position = new kakao.maps.LatLng(data.latitude, data.longitude)
         const formattedPrice = (data.averagePrice / 10000).toFixed(2) + '억'
+        formattedPrice == NaN ? '' : formattedPrice
         const overlayElement = document.createElement('div')
         data.type = 'APARTMENT'
         data.keyword = data.apartmentName
@@ -718,10 +757,8 @@ export default {
 
     async fetchDealsData() {
       try {
-        console.log(this.searchKeyword)
         if (this.searchKeyword.trim() !== '') {
           this.deals = await searchKeyword(this.searchKeyword)
-          console.log(this.deals)
           this.deals.reverse()
         }
       } catch (error) {
@@ -758,15 +795,52 @@ export default {
         this.handelUpdateMarkers()
       })
     },
-
-    // chartSection의 찜하기 버트 api호출
-    async addToFavorites() {
-      try {
-        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`)
-        console.log('서버 응답:', response.data)
-      } catch (error) {
-        console.error('요청 실패:', error)
+    async checkZzim(buildingName) {
+      if (!localStorage.getItem('access')) {
+        this.zzimCheck = false
+        return false // 'access' 키가 localStorage에 없으면 false 반환
       }
+
+      const zzimList = await getZzim()
+      console.log(zzimList.some((z) => z.buildingName == buildingName))
+      if (zzimList && Array.isArray(zzimList)) {
+        console.log('S')
+        this.zzimCheck = zzimList.some((z) => z.buildingName == buildingName)
+        return
+      }
+
+      return false // zzimList가 배열이 아니거나 비어있으면 false 반환
+    },
+    async addZzim(buildingName) {
+      if (!localStorage.getItem('access')) {
+        alert('로그인 후 찜기능을 이용해주세요!')
+        return
+      }
+
+      await postZzim(buildingName)
+      this.zzimCheck = true
+      alert('찜 목록에 추가되었습니다.')
+      await this.getZzim() // Update the zzim list displayed
+    },
+
+    async deleteZzim(buildingName) {
+      let zzimList = await getZzim()
+
+      if (zzimList && Array.isArray(zzimList)) {
+        await postZzim(buildingName)
+        this.zzimCheck = false
+        alert('삭제 완료했습니다.')
+        await this.getZzim()
+      }
+    },
+    async getZzim() {
+      const zzimList = await getZzim()
+      console.log(zzimList)
+      if (!localStorage.getItem('access')) {
+        this.zzimList = []
+        return
+      }
+      this.zzimList = Array.isArray(zzimList) ? zzimList : []
     }
   }
 }
@@ -821,7 +895,7 @@ export default {
 </style>
 <style scoped>
 .search-results {
-  max-height: 40vh;
+  max-height: 30vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
@@ -896,7 +970,7 @@ export default {
   display: flex;
   height: 6vh;
   align-items: center;
-
+  width: 100%;
   border-bottom: 0.1px solid lightgray;
   border-radius: 1px;
 }
@@ -955,7 +1029,6 @@ export default {
   height: 100% - 0.3px;
   border-top: 0.3px solid lightgray;
   /* overflow-y: scroll;  */
-  overflow-x: hidden; /* 가로 스크롤바 없애기 */
   display: flex;
   flex-direction: column;
 }
@@ -996,8 +1069,9 @@ export default {
   color: black;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
   outline: none;
+  cursor: pointer;
+  border: 1px solid;
 }
 .georae .info-list {
   max-height: 200px;
