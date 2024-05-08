@@ -43,7 +43,12 @@
             class="deal-item"
             @click="handleApartment(deal)"
           >
-            <img src="../../assets/apartment.png" v-if="deal.type == 'APARTMENT'" alt="Apartment Icon" style="width: 12px; height: 12px;">  
+            <img
+              src="../../assets/apartment.png"
+              v-if="deal.type == 'APARTMENT'"
+              alt="Apartment Icon"
+              style="width: 12px; height: 12px"
+            />
             {{ deal.keyword }}
           </div>
         </div>
@@ -87,8 +92,13 @@
               class="deal-item"
               @click="handleApartment(deal)"
             >
-            <img src="./src/assets.apratment.png" v-if="deal.type == 'APARTMENT'" alt="Apartment Icon" style="width: 12px; height: 12px;">
-            {{ deal.keyword }}
+              <img
+                src="./src/assets.apratment.png"
+                v-if="deal.type == 'APARTMENT'"
+                alt="Apartment Icon"
+                style="width: 12px; height: 12px"
+              />
+              {{ deal.keyword }}
             </div>
           </div>
           <div v-else>
@@ -219,7 +229,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
