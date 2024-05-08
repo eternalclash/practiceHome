@@ -17,64 +17,65 @@
 </template>
 
 <script>
-import { postLogin } from '@/api/loginAPI'
+import { useStore } from 'vuex'
+import { postLogin } from '@/api/loginAPI' // API 함수 경로 확인 필요
+import router from '@/router'
+import { ref } from 'vue'
 
 export default {
-  name: 'LoginContainer',
-  data() {
-    return {
-      username: '',
-      password: ''
-    }
-  },
-  methods: {
-    async login() {
+  setup() {
+    const username = ref('')
+    const password = ref('')
+    const store = useStore()
+
+    const login = async () => {
       try {
         const userData = {
-          email: this.username,
-          password: this.password
+          email: username.value,
+          password: password.value
         }
         await postLogin(userData)
-        alert('로그인되었습니다')
-        this.$router.push({ name: 'MainContainer' })
+        store.dispatch('performLogin')
+        router.push({ name: 'MainContainer' })
       } catch (error) {
-        if (error.response) {
-          alert('아이디 또는 비밀번호가 잘못되었습니다.')
-        } else {
-          alert('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-        }
+        alert('아이디 또는 비밀번호가 잘못되었습니다.')
       }
-    },
-    goToSignUp() {
-      this.$router.push({ name: 'SignUpContainer' })
     }
+
+    const goToSignUp = () => {
+      router.push({ name: 'SignUpContainer' })
+    }
+
+    return { username, password, login, goToSignUp }
   }
 }
 </script>
 
 <style scoped>
-.login-button,
-.signup-button {
+.login-button {
   width: 100%;
-  height: 6vh;
+  height: 5vh;
   border-radius: 5px;
   border: none;
   color: white;
+  background-color: #2462b9; /* 변경 */
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
   padding: 3%;
 }
-
-.login-button {
-  background-color: #2462b9;
-}
-
 .signup-button {
   margin-top: 2vh;
-  background-color: #484854;
+  width: 100%;
+  border-radius: 5px;
+  border: none;
+  color: white;
+  background-color: #484854; /* 변경 */
+  box-shadow: 4px 4px 8px #aaa;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 3%;
 }
-
 .logo-group {
   display: flex;
   width: 100%;
@@ -84,9 +85,9 @@ export default {
 .logo {
   width: 100%;
   height: auto;
-  background-repeat: no-repeat;
-  background-color: transparent;
-  background-image: url('@/assets/SSABANG.svg');
+  background-repeat: no-repeat; /* 이미지 반복 없음 */
+  background-color: transparent; /* 배경색 투명 설정 */
+  background-image: url('@/assets/SSABANG.svg'); /* 배경 이미지 */
   background-size: contain;
   background-position: center;
 }
@@ -108,8 +109,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cae5ff;
-  opacity: 0.5;
+  background-color: #cae5ff; /* 변경 */
+  opacity: 0.5; /* 이미지의 투명도 (이미지를 보이게 하기 위해 적당한 투명도 선택) */
 }
 
 .input-container {
@@ -153,6 +154,6 @@ input[type='password'] {
 
 button:hover {
   opacity: 0.5;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
 }
 </style>

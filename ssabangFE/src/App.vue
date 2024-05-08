@@ -2,28 +2,41 @@
   <header class="header-group">
     <img :src="logoSrc" alt="Logo" class="header-logo" />
     <div @click="goRealEstate">서울시 최근거래가</div>
-    <button class="login-button" @click="login">로그인</button>
+    <button class="login-button" @click="handleAuth">{{ authButtonLabel }}</button>
   </header>
   <router-view />
 </template>
 
 <script>
-// 이미지를 import 문을 사용하여 불러옵니다.
+import { mapState, mapActions } from 'vuex'
 import logoSrc from '@/assets/SSABANG.svg'
+
 export default {
   name: 'App',
-  data() {
-    return {
-      logoSrc // ES6 shorthand property
+  computed: {
+    ...mapState(['isLoggedIn']),
+    authButtonLabel() {
+      return this.isLoggedIn ? '로그아웃' : '로그인'
     }
   },
   methods: {
-    login() {
-      // 회원가입 로직을 여기에 추가
-      this.$router.push({ name: 'LoginContainer' })
+    ...mapActions(['performLogin', 'logout']),
+    handleAuth() {
+      if (this.isLoggedIn) {
+        this.logout().then(() => {
+          this.$router.replace({ name: 'Home' })
+        })
+      } else {
+        this.$router.push({ name: 'LoginContainer' })
+      }
     },
     goRealEstate() {
       this.$router.push({ name: 'RealEstateList' })
+    }
+  },
+  data() {
+    return {
+      logoSrc
     }
   }
 }
@@ -39,7 +52,7 @@ header {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #38B6FF;;
+  background-color: #38b6ff;
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;

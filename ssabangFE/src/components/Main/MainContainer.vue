@@ -133,14 +133,13 @@
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
-        <button v-if="infomation.isLiked != true" @click="addToFavorites(infomation.apartmentName)" class="favorite-button">
+        <button v-if="infomation.isLiked != true" @click="addToFavorites" class="favorite-button">
           찜 하기
         </button>
         <button v-else class="notfavorite-button">찜 완료</button>
       </div>
 
       <div class="flex">
-        <div @click="prevArea" class="arrow">&lt;</div>
         <div
           class="apt-size clickStyle"
           :class="{ clicked: this.tempArea == -1 }"
@@ -149,15 +148,13 @@
           전체
         </div>
         <div
-          v-for="(area, index) in visibleAreas"
-          :key="index"
           class="apt-size clickStyle"
-          :class="{ clicked: tempArea == area }"
+          :class="{ clicked: this.tempArea == area }"
           @click="changeArea(area)"
+          v-for="(area, index) in areas"
         >
           {{ area }}㎡
         </div>
-        <div @click="nextArea" class="arrow">&gt;</div>
       </div>
       <div>
         <div class="sise">싸방시세</div>
@@ -262,6 +259,7 @@ import { getSchoolNear, getSchoolInRange } from '@/api/schoolAPI'
 import { formatToKoreanCurrency, parseDate, formatAmount } from '@/utills/calculate'
 import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
+// import { calculateHalfAverage } from './changSectionHalf'
 import { postZzim, getZzim } from '@/api/zzimAPI'
 export default {
   name: 'MainContainer',
@@ -378,11 +376,6 @@ export default {
   },
   components: {
     GoogleChart
-  },
-  computed: {
-    visibleAreas() {
-      return this.areas.slice(this.currentStartIndex, this.currentStartIndex + this.displayCount)
-    }
   },
   methods: {
     async addToFavorites() {
@@ -639,21 +632,47 @@ export default {
       let low = Number.MAX_SAFE_INTEGER
       let totalArea = 0
       let totalPrice = 0
-      this.chartData = []
 
       let returnData = []
       if (this.tempYear == -1) {
-        returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if (this.infomation.allYear != undefined) {
+          returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
+          if (returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1]
+            this.chartData.unshift(['Year', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       } else if (this.tempYear == 1) {
-        returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if (this.infomation.oneYear != undefined) {
+          returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
+          if (returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1]
+            this.chartData.unshift(['Month', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.222')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       } else if (this.tempYear == 3) {
-        returnData = calculateYearlyAverage(this.infomation.threeYear, this.tempArea)
-        this.chartData = returnData[0]
-        this.tempDeal = returnData[1]
+        if (this.infomation.threeYear != undefined) {
+          returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
+          if (returnData != []) {
+            this.chartData = returnData[0]
+            this.tempDeal = returnData[1]
+            this.chartData.unshift(['Month', '실거래가'])
+          } else {
+            alert('해당 기간 거래내역이 없습니다.')
+          }
+        } else {
+          alert('해당 기간 거래내역이 없습니다.')
+        }
       }
 
       for (let info of this.tempDeal) {
@@ -664,13 +683,6 @@ export default {
         if (low > dealAmountNumeric) low = dealAmountNumeric
       }
 
-      if (this.tempYear == -1) {
-        this.chartData.unshift(['Year', '실거래가'])
-      } else if (this.tempYear == 1) {
-        this.chartData.unshift(['Month', '실거래가'])
-      } else if (this.tempYear == 3) {
-        this.chartData.unshift(['Year', '실거래가'])
-      }
       this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
       this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
 
@@ -685,16 +697,6 @@ export default {
     changeYear(year) {
       this.tempYear = year
       this.drawChartSection()
-    },
-    nextArea() {
-      if (this.currentStartIndex + this.displayCount < this.areas.length) {
-        this.currentStartIndex += this.displayCount
-      }
-    },
-    prevArea() {
-      if (this.currentStartIndex - this.displayCount >= 0) {
-        this.currentStartIndex -= this.displayCount
-      }
     },
 
     displayApartmentMarkers(apartmentData) {
@@ -778,9 +780,10 @@ export default {
     },
 
     // chartSection의 찜하기 버트 api호출
-    async addToFavorites(buildingName) {
+    async addToFavorites() {
       try {
-        const response = await postZzim(buildingName)
+        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`)
+        console.log('서버 응답:', response.data)
       } catch (error) {
         console.error('요청 실패:', error)
       }
@@ -913,6 +916,7 @@ export default {
   display: flex;
   height: 6vh;
   align-items: center;
+
   border-bottom: 0.1px solid lightgray;
   border-radius: 1px;
 }
