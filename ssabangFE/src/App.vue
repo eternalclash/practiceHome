@@ -24,7 +24,7 @@ export default {
     handleAuth() {
       if (this.isLoggedIn) {
         this.logout().then(() => {
-          this.$router.replace({ name: 'Home' })
+          this.$router.replace({ name: 'LoginContainer' })
         })
       } else {
         this.$router.push({ name: 'LoginContainer' })

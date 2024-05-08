@@ -1,4 +1,5 @@
 import axiosClient from './axiosClient'
+import { takeException } from './exception'
 
 const searchKeyword = async (apartmentName) => {
   try {
@@ -13,12 +14,10 @@ const searchKeyword = async (apartmentName) => {
 }
 const getApartmentData = async (aptcode) => {
   try {
-    console.log(aptcode)
     const response = await axiosClient.get(
       // `${API_URL}/house-deals/apartment?apt-code=${aptcode}&sort-option=DESC`
       `/house-deals?apartment-name=${aptcode}&sort-option=DESC`
     )
-    console.log(response.data.result)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -43,6 +42,7 @@ const getApartmentMarker = async (lat, lng) => {
     )
     return response.data.result
   } catch (error) {
+    takeException()
     console.error('Error fetching deals:', error)
     return []
   }

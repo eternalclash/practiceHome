@@ -7,6 +7,7 @@ const postSignup = async (data) => {
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
+    
     throw error
   }
 }
