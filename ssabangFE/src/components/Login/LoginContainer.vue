@@ -17,37 +17,37 @@
 </template>
 
 <script>
-import { postLogin } from '@/api/loginAPI'
+
+import { useStore } from 'vuex'
+import { postLogin } from '@/api/loginAPI' // API 함수 경로 확인 필요
+import router from '@/router'
+import { ref } from 'vue'
 
 export default {
-  name: 'LoginContainer',
-  data() {
-    return {
-      username: '',
-      password: ''
-    }
-  },
-  methods: {
-    async login() {
+  setup() {
+    const username = ref('')
+    const password = ref('')
+    const store = useStore()
+
+    const login = async () => {
       try {
         const userData = {
-          email: this.username,
-          password: this.password
+          email: username.value,
+          password: password.value
         }
         await postLogin(userData)
-        alert('로그인되었습니다')
-        this.$router.push({ name: 'MainContainer' })
+        store.dispatch('performLogin')
+        router.push({ name: 'MainContainer' })
       } catch (error) {
-        if (error.response) {
-          alert('아이디 또는 비밀번호가 잘못되었습니다.')
-        } else {
-          alert('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-        }
+        alert('아이디 또는 비밀번호가 잘못되었습니다.')
       }
-    },
-    goToSignUp() {
-      this.$router.push({ name: 'SignUpContainer' })
     }
+
+    const goToSignUp = () => {
+      router.push({ name: 'SignUpContainer' })
+    }
+
+    return { username, password, login, goToSignUp }
   }
 }
 </script>

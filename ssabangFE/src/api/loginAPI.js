@@ -1,10 +1,9 @@
-import axios from 'axios'
-// const API_URL = 'http://ec2-15-164-49-137.ap-northeast-2.compute.amazonaws.com:8080/api'
-const API_URL = 'http://localhost:8080/api'
-
-const postSignup = async (data ) => {
+import axiosClient from './axiosClient'
+const postSignup = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/members/new`, data)
+    const response = await axiosClient.post(`/members/new`, data, {
+      withCredentials: true
+    })
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -12,18 +11,23 @@ const postSignup = async (data ) => {
   }
 }
 
-const postLogin = async ( data ) => {
+const postLogin = async (data) => {
   try {
-    await axios.post(`${API_URL}/members/login`, data)
+    const response = await axiosClient.post('/members/login', data)
+    const token = response.headers['access']
+    if (token) {
+      localStorage.setItem('access', token)
+    }
+    return response.data
   } catch (error) {
-    console.error('Error fetching deals:', error)
+    console.error('Error during login:', error)
     throw error
   }
 }
 
-const postLogout = async (data) => {
+const postLogout = async () => {
   try {
-    await axios.post(`${API_URL}/members/logout`, data)
+    await axiosClient.post(`/members/logout`)
   } catch (error) {
     console.error('Error fetching deals:', error)
     throw error
