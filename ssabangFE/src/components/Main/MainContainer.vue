@@ -133,7 +133,7 @@
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
-        <button v-if="infomation.isLiked != true" @click="addToFavorites" class="favorite-button">
+        <button v-if="infomation.isLiked != true" @click="addToFavorites(infomation.apartmentName)" class="favorite-button">
           찜 하기
         </button>
         <button v-else class="notfavorite-button">찜 완료</button>
@@ -696,7 +696,6 @@ export default {
         this.currentStartIndex -= this.displayCount
       }
     },
- 
 
     displayApartmentMarkers(apartmentData) {
       this.clearMarkers()
@@ -779,10 +778,9 @@ export default {
     },
 
     // chartSection의 찜하기 버트 api호출
-    async addToFavorites() {
+    async addToFavorites(buildingName) {
       try {
-        const response = await postZzim()
-        console.log('서버 응답:', response.data)
+        const response = await postZzim(buildingName)
       } catch (error) {
         console.error('요청 실패:', error)
       }
