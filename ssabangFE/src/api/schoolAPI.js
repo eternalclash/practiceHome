@@ -15,7 +15,6 @@ const getSchoolInRange = async (lat, lng) => {
     const response = await axiosClient.get(
       `/school/schoolInRange?lat=${lat}&lng=${lng}&distance=1000`
     )
-    console.log(response.data.result)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)

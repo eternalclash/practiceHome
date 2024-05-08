@@ -26,7 +26,7 @@ export default {
     handleAuth() {
       if (this.isLoggedIn) {
         this.logout().then(() => {
-          this.$router.replace({ name: 'Home' })
+          this.$router.replace({ name: 'LoginContainer' })
         })
       } else {
         this.$router.push({ name: 'LoginContainer' })
@@ -53,7 +53,7 @@ header {
 }
 .login-button {
   width: 5vw;
-  height: 5vh;
+  height: 5.5vh;
   border-radius: 5px;
   border: none;
   color: white;
@@ -73,13 +73,17 @@ button:hover {
   opacity: 0.5;
   background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
 }
-.realEstate{
+.realEstate {
   border-radius: 5px;
+  height: 5vh;
   color: #38b6ff;
   font-weight: bold;
-  border: none;
+  border: 1px solid #38b6ff;
   margin-left: 20px;
-  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  padding: 0 1vw;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 .header-logo {
 }

@@ -60,10 +60,9 @@
       <button class="close-button" @click="toggleSearchResults">
         {{ showSearchResults ? '▲' : '▼' }}
       </button>
-      <div style="display: flex; height: 3vh; justify-content: center; align-items: center">
+      <div style="display: flex; flex-direction: column; width: 100%">
         <div
           style="
-            width: 100%;
             height: 3vh;
             margin: 0;
             border: 1px solid;
@@ -75,8 +74,7 @@
             cursor: pointer;
           "
           id="search-input"
-          placeholder="검색..."
-          @keyup.enter="searchPlace"
+          @click="toggleZzimResults"
         >
           아파트 찜목록 보기
         </div>
@@ -85,9 +83,9 @@
           class="search-results"
           style="background-color: white; position: relative"
         >
-          <div v-if="deals && deals.length > 0">
+          <div v-if="zzimList.length > 0">
             <div
-              v-for="(deal, index) in deals"
+              v-for="(deal, index) in zzimList"
               :key="index"
               class="deal-item"
               @click="handleApartment(deal)"
@@ -98,11 +96,11 @@
                 alt="Apartment Icon"
                 style="width: 12px; height: 12px"
               />
-              {{ deal.keyword }}
+              {{ deal.buildingName }}
             </div>
           </div>
           <div v-else>
-            <div class="deal-item">검색결과가 존재하지 않습니다.</div>
+            <div class="deal-item">찜 목록이 비어 있습니다.</div>
           </div>
         </div>
       </div>
@@ -128,29 +126,60 @@
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
-        <button v-if="infomation.isLiked != true" @click="addToFavorites" class="favorite-button">
+        <button
+          v-if="zzimCheck == false"
+          @click="addZzim(infomation.apartmentName)"
+          class="favorite-button"
+        >
           찜 하기
         </button>
-        <button v-else class="notfavorite-button">찜 완료</button>
+        <button v-else class="notfavorite-button" @click="deleteZzim(infomation.apartmentName)">
+          찜 완료
+        </button>
       </div>
 
-      <div class="flex">
-        <div
-          class="apt-size clickStyle"
-          :class="{ clicked: this.tempArea == -1 }"
-          @click="changeArea(-1)"
-        >
-          전체
-        </div>
-        <div
-          class="apt-size clickStyle"
-          :class="{ clicked: this.tempArea == area }"
-          @click="changeArea(area)"
-          v-for="(area, index) in areas"
-        >
-          {{ area }}㎡
+      <div style="max-width: 100%; min-height: 60px; overflow-x: auto; display: flex">
+        <div style="display: flex; min-height: 60px">
+          <div
+            style="
+              flex-shrink: 0;
+              min-width: 100px;
+              padding: 10px;
+              box-sizing: border-box;
+              border: 2px solid #fafafb;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              font-size: 1.1rem;
+            "
+            class="clickStyle"
+            :class="{ clicked: this.tempArea == -1 }"
+            @click="changeArea(-1)"
+          >
+            전체
+          </div>
+          <div
+            style="
+              flex-shrink: 0;
+              min-width: 100px;
+              padding: 10px;
+              box-sizing: border-box;
+              border: 2px solid #fafafb;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              font-size: 1.1rem;
+            "
+            class="clickStyle"
+            :class="{ clicked: this.tempArea == area }"
+            @click="changeArea(area)"
+            v-for="(area, index) in areas"
+          >
+            {{ area }}㎡
+          </div>
         </div>
       </div>
+
       <div>
         <div class="sise">싸방시세</div>
         <div class="mame">매매 {{ this.lowPrice }} ~ {{ this.highPrice }}</div>
@@ -183,8 +212,9 @@
       </div>
       <div class="georae">
         <div class="silgeorae">
-          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
-          실거래가</div>
+          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px;  margin-right: 1%;" />
+          <div>실거래가</div>
+        </div>
         <div class="list-between">
           <div>계약일</div>
           <div>실거래정보</div>
@@ -204,8 +234,9 @@
       <div class="convenience">
         <div>
           <div class="silgeorae">
-            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
-            학군정보</div>
+            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+            <div>학군정보</div>
+          </div>
           <div class="list-between">
             <div>학군</div>
             <div>거리</div>
@@ -221,8 +252,9 @@
 
         <div>
           <div class="silgeorae">
-            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
-              역세권정보</div>
+            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+              <div>역세권정보</div>
+            </div>
           <div class="list-between">
             <div>역</div>
             <div>거리</div>
@@ -268,7 +300,7 @@ export default {
       guMarkers: [],
       apartmentMarkers: [],
       schoolMarkers: [],
-
+      zzimList: [],
       searchKeyword: '',
       deals: [],
       deal: {},
@@ -316,8 +348,8 @@ export default {
       chartType: 'LineChart',
       markers: [],
       showSearchResults: false,
-      showZzimResults:false,
-
+      showZzimResults: false,
+      zzimCheck: false,
       topLoadingCheck: false,
       topLists: [
         {
@@ -369,6 +401,7 @@ export default {
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
     this.updateTopLists()
+    this.getZzim() // Load the zzim list on component mount
   },
   components: {
     GoogleChart
@@ -418,6 +451,9 @@ export default {
     openSearchResults() {
       this.showSearchResults = true // 검색 결과 창을 숨깁니다.
     },
+    toggleZzimResults() {
+      this.showZzimResults = !this.showZzimResults
+    },
     clearMarkers() {
       this.markers.forEach((m) => {
         m.marker?.setMap(null)
@@ -439,8 +475,8 @@ export default {
         const overlayElement = document.createElement('div')
         overlayElement.className = 'overlay-info'
         overlayElement.innerHTML = `
-      <div class="overlay-text">${name}</div>
-      <div class="overlay-number">${formattedPrice}</div>
+      <div class="overlay-number">${name}</div>
+  
     `
 
         // 클릭 이벤트 리스너 직접 추가
@@ -503,16 +539,6 @@ export default {
         })
         overlay.setMap(this.map) // Initially hide the overlay
 
-        // // 마커에 마우스오버 이벤트를 등록합니다
-        // kakao.maps.event.addListener(marker, 'mouseover', () => {
-        //   overlay.setMap(this.map)
-        // })
-
-        // // 마커에 마우스아웃 이벤트를 등록합니다
-        // kakao.maps.event.addListener(marker, 'mouseout', () => {
-        //   overlay.setMap(null)
-        // })
-
         this.markers.push({ overlay })
       })
     },
@@ -556,8 +582,12 @@ export default {
     },
     async handleApartment(deal) {
       try {
-        if (deal.type == 'APARTMENT' || deal.apartmentName) {
-          this.infomation = await getApartmentData(deal?.keyword || deal?.apartmentName)
+        if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
+          this.infomation = await getApartmentData(
+            deal?.keyword || deal?.apartmentName || deal?.buildingName
+          )
+          console.log(this.infomation)
+          this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
           this.subway.distance = this.calculateDistance(
             this.infomation.latitude,
@@ -596,6 +626,7 @@ export default {
           }
         } else {
           this.infomation = await getDongData(deal.keyword)
+          this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.displayApartmentMarkers(this.infomation)
         }
       } catch (e) {
@@ -681,6 +712,7 @@ export default {
       apartmentData.forEach((data, index) => {
         const position = new kakao.maps.LatLng(data.latitude, data.longitude)
         const formattedPrice = (data.averagePrice / 10000).toFixed(2) + '억'
+        formattedPrice == NaN ? '' : formattedPrice
         const overlayElement = document.createElement('div')
         data.type = 'APARTMENT'
         data.keyword = data.apartmentName
@@ -753,15 +785,52 @@ export default {
         this.handelUpdateMarkers()
       })
     },
-
-    // chartSection의 찜하기 버트 api호출
-    async addToFavorites() {
-      try {
-        const response = await axios.get(`http://찜추가 api?aptCode=${this.deal.aptCode}`)
-        console.log('서버 응답:', response.data)
-      } catch (error) {
-        console.error('요청 실패:', error)
+    async checkZzim(buildingName) {
+      if (!localStorage.getItem('access')) {
+        this.zzimCheck = false
+        return false // 'access' 키가 localStorage에 없으면 false 반환
       }
+
+      const zzimList = await getZzim()
+      console.log(zzimList.some((z) => z.buildingName == buildingName))
+      if (zzimList && Array.isArray(zzimList)) {
+        console.log('S')
+        this.zzimCheck = zzimList.some((z) => z.buildingName == buildingName)
+        return
+      }
+
+      return false // zzimList가 배열이 아니거나 비어있으면 false 반환
+    },
+    async addZzim(buildingName) {
+      if (!localStorage.getItem('access')) {
+        alert('로그인 후 찜기능을 이용해주세요!')
+        return
+      }
+
+      await postZzim(buildingName)
+      this.zzimCheck = true
+      alert('찜 목록에 추가되었습니다.')
+      await this.getZzim() // Update the zzim list displayed
+    },
+
+    async deleteZzim(buildingName) {
+      let zzimList = await getZzim()
+
+      if (zzimList && Array.isArray(zzimList)) {
+        await postZzim(buildingName)
+        this.zzimCheck = false
+        alert('삭제 완료했습니다.')
+        await this.getZzim()
+      }
+    },
+    async getZzim() {
+      const zzimList = await getZzim()
+      console.log(zzimList)
+      if (!localStorage.getItem('access')) {
+        this.zzimList = []
+        return
+      }
+      this.zzimList = Array.isArray(zzimList) ? zzimList : []
     }
   }
 }
@@ -816,7 +885,7 @@ export default {
 </style>
 <style scoped>
 .search-results {
-  max-height: 40vh;
+  max-height: 30vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
@@ -868,6 +937,8 @@ export default {
 .silgeorae {
   margin-top: 2vh;
   font-weight: 700;
+  display: flex;
+  align-items: center;
 }
 .flex-center {
   display: flex;
@@ -891,7 +962,7 @@ export default {
   display: flex;
   height: 6vh;
   align-items: center;
-
+  width: 100%;
   border-bottom: 0.1px solid lightgray;
   border-radius: 1px;
 }
@@ -950,7 +1021,6 @@ export default {
   height: 100% - 0.3px;
   border-top: 0.3px solid lightgray;
   /* overflow-y: scroll;  */
-  overflow-x: hidden; /* 가로 스크롤바 없애기 */
   display: flex;
   flex-direction: column;
 }
@@ -991,8 +1061,9 @@ export default {
   color: black;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
   outline: none;
+  cursor: pointer;
+  border: 1px solid;
 }
 .georae .info-list {
   max-height: 200px;
