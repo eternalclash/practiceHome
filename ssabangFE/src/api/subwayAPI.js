@@ -1,10 +1,8 @@
-import axios from 'axios'
-// const API_URL = 'http://ec2-15-164-49-137.ap-northeast-2.compute.amazonaws.com:8080/api'
-const API_URL = 'http://localhost:8080/api'
+import axiosClient from './axiosClient'
 
 const getSubwayNear = async (lat, lng) => {
   try {
-    const response = await axios.get(`${API_URL}/subway/subwayNear?lat=${lat}&lng=${lng}`)
+    const response = await axiosClient.get(`/subway/subwayNear?lat=${lat}&lng=${lng}`)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -14,9 +12,7 @@ const getSubwayNear = async (lat, lng) => {
 
 const getSubwayInRange = async (lat, lng) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/subway/subwayInRange?lat=${lat}&lng=${lng}&distance=1000`
-    )
+    const response = await axiosClient.get(`/subway/subwayInRange?lat=${lat}&lng=${lng}&distance=1000`)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
