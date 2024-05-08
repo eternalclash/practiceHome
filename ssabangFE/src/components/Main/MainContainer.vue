@@ -93,7 +93,7 @@
               @click="handleApartment(deal)"
             >
               <img
-                src="./src/assets.apratment.png"
+                src="../../assets/apartment.png"
                 v-if="deal.type == 'APARTMENT'"
                 alt="Apartment Icon"
                 style="width: 12px; height: 12px"
@@ -182,7 +182,9 @@
         </div>
       </div>
       <div class="georae">
-        <div class="silgeorae">실거래가</div>
+        <div class="silgeorae">
+          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
+          실거래가</div>
         <div class="list-between">
           <div>계약일</div>
           <div>실거래정보</div>
@@ -201,7 +203,9 @@
       </div>
       <div class="convenience">
         <div>
-          <div class="silgeorae">학군정보</div>
+          <div class="silgeorae">
+            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
+            학군정보</div>
           <div class="list-between">
             <div>학군</div>
             <div>거리</div>
@@ -216,7 +220,9 @@
         </div>
 
         <div>
-          <div class="silgeorae">역세권정보</div>
+          <div class="silgeorae">
+            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px" />
+              역세권정보</div>
           <div class="list-between">
             <div>역</div>
             <div>거리</div>
@@ -413,7 +419,6 @@ export default {
       this.showSearchResults = true // 검색 결과 창을 숨깁니다.
     },
     clearMarkers() {
-      console.log('clear' + this.markers.map((e) => console.log(e)))
       this.markers.forEach((m) => {
         m.marker?.setMap(null)
         m.overlay?.setMap(null)
@@ -458,27 +463,24 @@ export default {
       this.clearMarkers() // 기존 마커 제거
       this.subwayMarkers = await getSubwayInRange(this.lat, this.lng)
       this.schoolMarkers = await getSchoolInRange(this.lat, this.lng)
-      console.log(this.subwayMarkers)
-      console.log(this.schoolMarkers)
       if (this.map.getLevel() <= 4) {
         this.apartmentMarkers = await getApartmentMarker(this.lat, this.lng)
         const markersData = this.apartmentMarkers
         this.displayMarkers(markersData)
+        this.displayCategoryMarkers(this.subwayMarkers)
+        this.displayCategoryMarkers(this.schoolMarkers)
       } else {
         // 지도의 현재 레벨에 따라 적절한 API 호출
         const useDong = this.map.getLevel() < 7
         const markersData = useDong ? this.dongMarkers : this.guMarkers
         this.displayMarkers(markersData)
       }
-      this.displayCategoryMarkers(this.subwayMarkers)
-      this.displayCategoryMarkers(this.schoolMarkers)
     },
 
     async displayCategoryMarkers(markersData) {
       const markerSubway = '/src/assets/subway.png' // 마커 이미지 경로
       const markerSchool = '/src/assets/school.png'
       markersData.forEach((data) => {
-        console.log('data' + data)
         const position = new kakao.maps.LatLng(
           data?.lat || data?.latitude,
           data?.lng || data?.longitude
@@ -554,9 +556,7 @@ export default {
     },
     async handleApartment(deal) {
       try {
-        console.log(deal)
         if (deal.type == 'APARTMENT' || deal.apartmentName) {
-          console.log('deal' + deal)
           this.infomation = await getApartmentData(deal?.keyword || deal?.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
           this.subway.distance = this.calculateDistance(
@@ -575,10 +575,6 @@ export default {
               s.lng
             )
             s.time = this.calculateTravelTime(s.distance, 4.8)
-          }
-
-          for (let s of this.school) {
-            console.log(s)
           }
 
           this.deal = deal
@@ -617,11 +613,11 @@ export default {
       if (this.tempYear == -1) {
         if(this.infomation.allYear != undefined){
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-          if(returnData != []) {
+          if(returnData[1].length != []) {
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Year', '실거래가'])
-          } else {
+          } else{
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
@@ -630,12 +626,12 @@ export default {
       } else if (this.tempYear == 1) {
         if(this.infomation.oneYear != undefined){
           returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-          if(returnData != []) {
+          if(returnData[1].length != []) {
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
-          } else {
-            alert('해당 기간 거래내역이 없습니다.222')
+          } else{
+            alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
           alert('해당 기간 거래내역이 없습니다.')
@@ -643,11 +639,12 @@ export default {
       } else if (this.tempYear == 3) {
         if(this.infomation.threeYear != undefined){
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
-          if(returnData != []) {
+          if(returnData[1].length != []) {
+            console.log('returnData',returnData)
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
-          } else {
+          } else{
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
@@ -718,10 +715,8 @@ export default {
 
     async fetchDealsData() {
       try {
-        console.log(this.searchKeyword)
         if (this.searchKeyword.trim() !== '') {
           this.deals = await searchKeyword(this.searchKeyword)
-          console.log(this.deals)
           this.deals.reverse()
         }
       } catch (error) {

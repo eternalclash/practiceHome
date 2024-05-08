@@ -1,8 +1,10 @@
 <template>
   <header class="header-group">
-    <img :src="logoSrc" alt="Logo" class="header-logo" />
-    <div @click="goRealEstate">서울시 최근거래가</div>
-    <button class="login-button" @click="handleAuth">{{ authButtonLabel }}</button>
+    <div style="display: flex; align-items: center;">
+      <img :src="logoSrc" @click="goHome" alt="Logo" class="header-logo hover" />
+      <div @click="goRealEstate" class="realEstate hover">서울시 최근거래가</div>
+    </div>
+    <button class="login-button hover" @click="handleAuth">{{ authButtonLabel }}</button>
   </header>
   <router-view />
 </template>
@@ -32,6 +34,9 @@ export default {
     },
     goRealEstate() {
       this.$router.push({ name: 'RealEstateList' })
+    },
+    goHome(){
+      this.$router.push({ name: 'MainContainer' })
     }
   },
   data() {
@@ -53,7 +58,6 @@ header {
   border: none;
   color: white;
   background-color: #38b6ff;
-  box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
   outline: none;
@@ -69,6 +73,17 @@ button:hover {
   opacity: 0.5;
   background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
 }
+.realEstate{
+  border-radius: 5px;
+  color: #38b6ff;
+  font-weight: bold;
+  border: none;
+  margin-left: 20px;
+  transition: background-color 0.3s;
+}
 .header-logo {
+}
+.hover {
+  cursor: pointer;
 }
 </style>

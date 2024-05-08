@@ -50,7 +50,6 @@ function calculateYearlyAverage(data, area) {
     yearlyAveragePrices.push([currentYear, parseFloat((average / 10000).toFixed(2))]);
   }
 
-  // 결과를 반환합니다. 연도별 평균 가격 및 해당 연도의 데이터가 담긴 배열을 반환합니다.
   return [yearlyAveragePrices, yearlyChartData.reverse()];
 }
 

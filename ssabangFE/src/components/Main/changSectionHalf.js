@@ -15,46 +15,43 @@ function calculateHalfAverage(data, area) {
 
   const halfAveragePrices = [[],[]];
   const chartData = [];
+
+  const threeYearsAgo = new Date(today);
+  threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+
+  // 루프 시작을 현재 달로 설정합니다.
   let currentYear = todayYear;
   let currentMonth = todayMonth;
   let sum = 0;
   let count = 0;
 
   for (const item of data) {
-    if(area == -1 || item.area == area){
+    if (area == -1 || item.area == area) {
       chartData.push(item);
       const [year, month] = item.dealDate.split('-').map(part => part.padStart(2, '0'));
       const dealAmount = parseFloat(item.dealAmount);
-      
-      while (!(year === currentYear && month === currentMonth) && (currentYear > year || (currentYear === year && currentMonth > month))) {
-        // 6개월 전까지 데이터를 모은 후 평균 계산
-        if (count > 0) {
-          const average = Math.round(sum / count);
-          halfAveragePrices[0].push([`${currentYear}-${currentMonth}`, parseFloat((average / 10000).toFixed(2))]);
+
+      const dealDate = new Date(`${year}-${month}-01`);
+
+      if (dealDate >= threeYearsAgo && dealDate <= today) {
+        // 6개월 단위로 데이터를 누적하여 합산합니다.
+        if (dealDate.getMonth() % 6 === 0) {
+          if (count > 0) {
+            const average = Math.round(sum / count);
+            halfAveragePrices[0].push([`${currentYear}-${currentMonth}`, parseFloat((average / 10000).toFixed(2))]);
+          }
+          sum = 0;
+          count = 0;
+          currentYear = dealDate.getFullYear();
+          currentMonth = dealDate.getMonth() + 1;
         }
-
-        // 다음 6개월로 이동
-        currentMonth -= 6;
-        if (currentMonth <= 0) {
-          currentYear--;
-          currentMonth += 12;
-        }
-        sum = 0;
-        count = 0;
-      }
-
-      sum += dealAmount;
-      count++;
-
-      // 오늘의 달까지 데이터를 처리했으면 종료
-      if (currentYear === todayYear && currentMonth === todayMonth) {
-        break;
+        sum += dealAmount;
+        count++;
       }
     }
   }
 
-  // 마지막 남은 데이터 처리
-  if (sum > 0 && count > 0) {
+  if (count > 0) {
     const average = Math.round(sum / count);
     halfAveragePrices[0].push([`${currentYear}-${currentMonth}`, parseFloat((average / 10000).toFixed(2))]);
   }
