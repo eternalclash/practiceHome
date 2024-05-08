@@ -1,6 +1,6 @@
 import axios from 'axios'
-// const API_URL = 'http://ec2-15-164-49-137.ap-northeast-2.compute.amazonaws.com:8080/api'
-const API_URL = 'http://localhost:8080/api'
+const API_URL = 'http://ec2-43-200-173-75.ap-northeast-2.compute.amazonaws.com:8080/api'
+// const API_URL = 'http://localhost:8080/api'
 
 const getZzim = async () => {
   try {
@@ -14,9 +14,7 @@ const getZzim = async () => {
 
 const postZzim = async (buildingName) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/memberhouses?buildingName=${buildingName}`
-    )
+    const response = await axios.post(`${API_URL}/memberhouses?buildingName=${buildingName}`)
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
@@ -24,4 +22,4 @@ const postZzim = async (buildingName) => {
   }
 }
 
-export { postZzim,getZzim }
+export { postZzim, getZzim }

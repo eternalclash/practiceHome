@@ -1,6 +1,6 @@
 import axios from 'axios'
-// const API_URL = 'http://ec2-15-164-49-137.ap-northeast-2.compute.amazonaws.com:8080/api'
-const API_URL = 'http://localhost:8080/api'
+const API_URL = 'http://ec2-43-200-173-75.ap-northeast-2.compute.amazonaws.com:8080/api'
+// const API_URL = 'http://localhost:8080/api'
 
 const getSubwayNear = async (lat, lng) => {
   try {
