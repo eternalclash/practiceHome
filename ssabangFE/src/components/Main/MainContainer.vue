@@ -30,26 +30,7 @@
           placeholder="동이름(역삼동),아파트이름으로 검색"
         />
       </div>
-      <div style="display: flex; height: 3vh; justify-content: center; align-items: center">
-        <div
-          style="
-            width: 100%;
-            height: 3vh;
-            margin: 0;
-            border: 1px solid;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #5ea1ff;
-            color: white;
-          "
-          id="search-input"
-          placeholder="검색..."
-          @keyup.enter="searchPlace"
-        >
-          아파트 찜목록 보기
-        </div>
-      </div>
+
       <div
         v-if="showSearchResults"
         class="search-results"
@@ -62,7 +43,8 @@
             class="deal-item"
             @click="handleApartment(deal)"
           >
-            @{{ deal.type }} - {{ deal.keyword }}
+            <img src="../../assets/apartment.png" v-if="deal.type == 'APARTMENT'" alt="Apartment Icon" style="width: 12px; height: 12px;">  
+            {{ deal.keyword }}
           </div>
         </div>
         <div v-else>
@@ -73,15 +55,70 @@
       <button class="close-button" @click="toggleSearchResults">
         {{ showSearchResults ? '▲' : '▼' }}
       </button>
+      <div style="display: flex; height: 3vh; justify-content: center; align-items: center">
+        <div
+          style="
+            width: 100%;
+            height: 3vh;
+            margin: 0;
+            border: 1px solid;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #5ea1ff;
+            color: white;
+            cursor: pointer;
+          "
+          id="search-input"
+          placeholder="검색..."
+          @keyup.enter="searchPlace"
+        >
+          아파트 찜목록 보기
+        </div>
+        <div
+          v-if="showZzimResults"
+          class="search-results"
+          style="background-color: white; position: relative"
+        >
+          <div v-if="deals && deals.length > 0">
+            <div
+              v-for="(deal, index) in deals"
+              :key="index"
+              class="deal-item"
+              @click="handleApartment(deal)"
+            >
+            <img src="./src/assets.apratment.png" v-if="deal.type == 'APARTMENT'" alt="Apartment Icon" style="width: 12px; height: 12px;">
+            {{ deal.keyword }}
+            </div>
+          </div>
+          <div v-else>
+            <div class="deal-item">검색결과가 존재하지 않습니다.</div>
+          </div>
+        </div>
+      </div>
     </div>
-
     <div class="map-container">
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
+
+    <div class="info-group" v-if="Object.keys(deal).length <= 0 && !this.topLoadingCheck">
+      <h2>로딩중 입니다.</h2>
+    </div>
+
+    <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck">
+      <div class="top-box" v-for="(topList, index) in topLists" :key="index" >
+        <h2 class="box-title">{{ topList.title }}</h2>
+        <!-- <ol class="list-group">
+          <li v-for="(item, i) in topList.items" :key="i" class="list-item">{{ `${item[0]} - ${item[1]}`}}</li>
+        </ol> -->
+        <GoogleChart :data="topList.chartData" :options="topList.chartOptions" :type="topList.chartType" style="width: 110%; height: 200px;"/>
+      </div>
+    </div>
+
     <div class="info-group" v-if="Object.keys(deal).length > 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
-        <button v-if="infomation.isLiked == false" @click="addToFavorites" class="favorite-button">
+        <button v-if="infomation.isLiked != true" @click="addToFavorites" class="favorite-button">
           찜 하기
         </button>
         <button v-else class="notfavorite-button">찜 완료</button>
@@ -110,7 +147,7 @@
         <div>평균 {{ this.avgPrice }}/3.3㎡</div>
       </div>
 
-      <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" />
+      <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" style="width: 110%; height: 200px;" />
       <div class="flex-center">
         <div
           class="date-container clickStyle"
@@ -163,11 +200,7 @@
             <div>{{ s.name }}</div>
             <div class="column-left">
               <div class="price">{{ s.time }}</div>
-<<<<<<< HEAD
               <div>거리 {{ s.distance }}km</div>
-=======
-              <div>거리 {{ s.distance}}km</div>
->>>>>>> 80dd603bc106a11874eb0fb8ce4fa3c23e56346a
             </div>
           </div>
         </div>
@@ -187,20 +220,6 @@
           </div>
         </div>
 
-        <div>
-          <div class="silgeorae">병원정보</div>
-          <div class="list-between">
-            <div>병원</div>
-            <div>거리</div>
-          </div>
-          <div class="list-between2">
-            <div>싸방정신병원</div>
-            <div class="column-left">
-              <div class="price">도보 10분</div>
-              <div>거리 3km</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -274,13 +293,58 @@ export default {
         ['2004-03', 130]
       ],
       chartOptions: {
-        title: '실거래가(단위: 만원)',
+        title: '실거래가(단위: 억원)',
         curveType: 'function',
         legend: { position: 'bottom' }
       },
       chartType: 'LineChart',
       markers: [],
-      showSearchResults: false
+      showSearchResults: false,
+      showZzimResults:false,
+
+      topLoadingCheck: false,
+      topLists: [
+        {
+          title: '서울 자치구별 비싼 집값 TOP5',
+          items: [],
+          chartData: [],
+          chartOptions: {
+            title: '(단위: 억원)',
+            legend: { position: 'none' }
+          },
+          chartType: 'ColumnChart'
+        },
+        {
+          title: '서울 자치구별 싼 집값 TOP5',
+          items: [],
+          chartData: [],
+          chartOptions: {
+            title: '(단위: 억원)',
+            legend: { position: 'none' }
+          },
+          chartType: 'ColumnChart'
+        },
+        {
+          title: '서울 법정동별 비싼 집값 TOP5',
+          items: [],
+          chartData: [],
+          chartOptions: {
+            title: '(단위: 억원)',
+            legend: { position: 'none' }
+          },
+          chartType: 'ColumnChart'
+        },
+        {
+          title: '서울 법정동별 싼 집값 TOP5',
+          items: [],
+          chartData: [],
+          chartOptions: {
+            title: '(단위: 억원)',
+            legend: { position: 'none' }
+          },
+          chartType: 'ColumnChart'
+        }
+      ],
     }
   },
   async mounted() {
@@ -288,6 +352,7 @@ export default {
     this.dongMarkers = await getDongMarker()
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
+    this.updateTopLists()
   },
   components: {
     GoogleChart
@@ -439,6 +504,29 @@ export default {
         this.markers.push({ overlay })
       })
     },
+    updateTopLists() {
+      this.guMarkers.sort((a, b) => a.amount - b.amount);
+      this.dongMarkers.sort((a, b) => a.amount - b.amount);
+
+      // 비싼 구 5개
+      this.topLists[0].items = this.guMarkers.slice(-5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
+      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items];
+
+      // 싼 구 5개
+      this.topLists[1].items = this.guMarkers.slice(0, 5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
+      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items];
+
+      // 비싼 동 5개
+      this.topLists[2].items = this.dongMarkers.slice(-5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
+      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items];
+
+      // 싼 동 5개
+      this.topLists[3].items = this.dongMarkers.slice(0, 5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
+      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items];
+    
+      this.topLoadingCheck = true;
+    },
+
     handelUpdateMarkers(event) {
       clearTimeout(this.inputTimer)
       this.inputTimer = setTimeout(() => {
@@ -518,13 +606,7 @@ export default {
 
       let returnData = []
       if (this.tempYear == -1) {
-        console.log('info' + this.infomation.allYear)
-        for (let x of this.infomation.allYear) {
-          console.log(x)
-        }
-        console.log(this.tempArea, '<<<<<<<<<<<<<')
         returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-        console.log(returnData)
         this.chartData = returnData[0]
         this.tempDeal = returnData[1]
       } else if (this.tempYear == 1) {
@@ -546,11 +628,11 @@ export default {
       }
 
       if (this.tempYear == -1) {
-        this.chartData.unshift(['Month', '실거래가'])
+        this.chartData.unshift(['Year', '실거래가'])
       } else if (this.tempYear == 1) {
         this.chartData.unshift(['Month', '실거래가'])
       } else if (this.tempYear == 3) {
-        this.chartData.unshift(['Month', '실거래가'])
+        this.chartData.unshift(['Year', '실거래가'])
       }
       this.areas = Array.from(this.infomation.areas).sort((a, b) => a - b)
       this.avgPrice = formatToKoreanCurrency(Math.ceil((totalPrice / totalArea) * 3.3))
@@ -899,5 +981,15 @@ export default {
 
 .clicked {
   background-color: #38b6ff;
+}
+
+.top-box {
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.box-title {
+  margin-bottom: 10px;
+  text-align: center;
 }
 </style>

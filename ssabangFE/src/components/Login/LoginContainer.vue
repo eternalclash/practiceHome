@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { postLogin } from '@/api/loginAPI' // assuming path to your auth functions
+import { postLogin } from '@/api/loginAPI'
 
 export default {
   name: 'LoginContainer',
@@ -53,30 +53,28 @@ export default {
 </script>
 
 <style scoped>
-.login-button {
+.login-button,
+.signup-button {
   width: 100%;
-  height: 5vh;
+  height: 6vh;
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #2462b9; /* 변경 */
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
   padding: 3%;
 }
+
+.login-button {
+  background-color: #2462b9;
+}
+
 .signup-button {
   margin-top: 2vh;
-  width: 100%;
-  border-radius: 5px;
-  border: none;
-  color: white;
-  background-color: #484854; /* 변경 */
-  box-shadow: 4px 4px 8px #aaa;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  padding: 3%;
+  background-color: #484854;
 }
+
 .logo-group {
   display: flex;
   width: 100%;
@@ -86,9 +84,9 @@ export default {
 .logo {
   width: 100%;
   height: auto;
-  background-repeat: no-repeat; /* 이미지 반복 없음 */
-  background-color: transparent; /* 배경색 투명 설정 */
-  background-image: url('@/assets/SSABANG.svg'); /* 배경 이미지 */
+  background-repeat: no-repeat;
+  background-color: transparent;
+  background-image: url('@/assets/SSABANG.svg');
   background-size: contain;
   background-position: center;
 }
@@ -110,8 +108,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cae5ff; /* 변경 */
-  opacity: 0.5; /* 이미지의 투명도 (이미지를 보이게 하기 위해 적당한 투명도 선택) */
+  background-color: #cae5ff;
+  opacity: 0.5;
 }
 
 .input-container {
@@ -155,6 +153,6 @@ input[type='password'] {
 
 button:hover {
   opacity: 0.5;
-  background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
+  background-color: rgba(0, 0, 0, 0.3);
 }
 </style>

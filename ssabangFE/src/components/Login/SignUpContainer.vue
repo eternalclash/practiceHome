@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container">
+  <div class="signup-container">
     <div class="input-container">
       <div class="logo-group">
         <div class="logo"></div>
@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { postSignup } from '@/api/loginAPI' // Adjust the import path as necessary
+import { postSignup } from '@/api/loginAPI'
 
 export default {
   name: 'SignUpContainer',
@@ -53,7 +53,6 @@ export default {
         this.$router.push({ name: 'LoginContainer' })
       } catch (error) {
         if (error.response) {
-          // Assuming 409 Conflict for existing user
           alert('존재하는 아이디입니다.')
         } else {
           alert('회원가입 중 오류가 발생했습니다.')
@@ -74,7 +73,7 @@ export default {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: green;
+  background-color: #2462b9;
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -85,7 +84,7 @@ export default {
   border-radius: 5px;
   border: none;
   color: white;
-  background-color: #6366f1;
+  background-color: #484854;
   box-shadow: 4px 4px 8px #aaa;
   cursor: pointer;
   transition: background-color 0.3s;
@@ -99,15 +98,15 @@ export default {
   justify-content: center;
 }
 .logo {
-  width: 100vh;
+  width: 100%;
   height: auto;
-  background-repeat: no-repeat; /* 이미지 반복 없음 */
-
-  background-image: url('@/assets/SSABANG.svg'); /* 배경 이미지 */
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  background-image: url('@/assets/SSABANG.svg');
+  background-size: contain;
   background-position: center;
 }
-.login-container {
+.signup-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -117,27 +116,15 @@ export default {
   position: relative;
   overflow: hidden;
 }
-.login-container::before {
+.signup-container::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('@/assets/loginImage.jpg');
-  background-size: cover;
-  background-position: center;
+  background-color: #cae5ff;
   opacity: 0.5;
-}
-.login-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1;
 }
 .input-container {
   position: relative;
@@ -148,7 +135,6 @@ export default {
   width: 30%;
   padding: 3%;
   border-radius: 1%;
-  z-index: 2;
 }
 .input-group {
   margin-bottom: 3vh;
@@ -166,6 +152,6 @@ input[type='password'] {
 }
 button:hover {
   opacity: 0.5;
-  background-color: rgba(0, 0, 0, 0.3); /* 검정색 투명 레이어 */
+  background-color: rgba(0, 0, 0, 0.3);
 }
 </style>

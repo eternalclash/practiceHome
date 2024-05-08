@@ -11,7 +11,6 @@ function calculateYearlyAverage(data, area) {
 
   const today = new Date();
   const todayYear = today.getFullYear().toString();
-  const todayMonth = (today.getMonth() + 1).toString().padStart(2, '0');
 
   const yearlyAveragePrices = [];
   const yearlyChartData = [];
@@ -27,7 +26,7 @@ function calculateYearlyAverage(data, area) {
       if (year !== currentYear) {
         if (currentYear !== '') {
           const average = count === 0 ? 0 : Math.round(sum / count);
-          yearlyAveragePrices.push([currentYear, average]);
+          yearlyAveragePrices.push([currentYear, parseFloat((average / 10000).toFixed(2))]);
         }
 
         currentYear = year;
@@ -48,11 +47,11 @@ function calculateYearlyAverage(data, area) {
 
   if (count > 0) {
     const average = Math.round(sum / count);
-    yearlyAveragePrices.push([currentYear, average]);
+    yearlyAveragePrices.push([currentYear, parseFloat((average / 10000).toFixed(2))]);
   }
 
   // 결과를 반환합니다. 연도별 평균 가격 및 해당 연도의 데이터가 담긴 배열을 반환합니다.
-  return [yearlyAveragePrices.reverse(), yearlyChartData.reverse()];
+  return [yearlyAveragePrices, yearlyChartData.reverse()];
 }
 
 export { calculateYearlyAverage };
