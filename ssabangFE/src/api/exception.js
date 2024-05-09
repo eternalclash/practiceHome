@@ -1,4 +1,4 @@
-import router from '../router/index.ts' // router 인스턴스를 가져옵니다.
+import router from '../router/index.js' // router 인스턴스를 가져옵니다.
 
 export const takeException = () => {
   localStorage.removeItem('access')
