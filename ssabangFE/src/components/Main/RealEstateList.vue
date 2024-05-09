@@ -1,76 +1,46 @@
 <template>
-  <div>
+  <div class="real-estate-list">
     <h1>서울시 법정동 및 구 아파트 거래 내역</h1>
-    <button @click="showGuSearch">구 검색</button>
-    <button @click="showDongSearch">동 검색</button>
-    <div v-if="currentView === 'guSearch'">
+    <div class="button-container">
+      <button @click="showGuSearch" :class="{ active: currentView === 'guSearch' }">구 검색</button>
+      <button @click="showDongSearch" :class="{ active: currentView === 'dongSearch' }">동 검색</button>
+    </div>
+    
+    <div v-if="currentView === 'guSearch'" class="search-container">
       <div class="selection-area">
         <select v-model="selectedGu">
           <option disabled value="">구를 선택하세요</option>
-          <option v-for="(gu, code) in guList" :key="gu" :value="gu">
-            {{ gu }}
-          </option>
+          <option v-for="(gu, code) in guList" :key="code" :value="gu">{{ gu }}</option>
         </select>
 
-        <!-- 날짜 선택 입력 필드 -->
-        <input
-          type="date"
-          v-model="selectedStartDate"
-          placeholder="시작 날짜 선택"
-          :min="'2022-01-01'"
-          :max="maxDate"
-        />
-        <input
-          type="date"
-          v-model="selectedEndDate"
-          placeholder="종료 날짜 선택"
-          :min="'2022-01-01'"
-          :max="maxDate"
-        />
+        <input type="date" v-model="selectedStartDate" placeholder="시작 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
+        <input type="date" v-model="selectedEndDate" placeholder="종료 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
 
-        <button @click="fetchGu">데이터 불러오기</button>
+        <button @click="fetchGu" class="fetch-button">데이터 불러오기</button>
       </div>
     </div>
 
-    <!-- 동 검색 활성화 시 보여줄 컴포넌트 -->
-    <div v-if="currentView === 'dongSearch'">
+    <div v-if="currentView === 'dongSearch'" class="search-container">
       <div class="selection-area">
         <select v-model="selectedGuCode" @change="updateDongList">
           <option disabled value="">구를 선택하세요</option>
-          <option v-for="(gu, code) in guList" :key="gu" :value="code">
-            {{ gu }}
-          </option>
+          <option v-for="(gu, code) in guList" :key="code" :value="code">{{ gu }}</option>
         </select>
 
         <select v-model="selectedDong">
           <option disabled value="">동을 선택하세요</option>
-          <option v-for="(dong, code) in dongList" :key="dong" :value="dong">
-            {{ dong.dongName }}
-          </option>
+          <option v-for="(dong, code) in dongList" :key="code" :value="dong">{{ dong.dongName }}</option>
         </select>
 
-        <!-- 날짜 선택 입력 필드 -->
-        <input
-          type="date"
-          v-model="selectedStartDate"
-          placeholder="시작 날짜 선택"
-          :min="'2022-01-01'"
-          :max="maxDate"
-        />
-        <input
-          type="date"
-          v-model="selectedEndDate"
-          placeholder="종료 날짜 선택"
-          :min="'2022-01-01'"
-          :max="maxDate"
-        />
+        <input type="date" v-model="selectedStartDate" placeholder="시작 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
+        <input type="date" v-model="selectedEndDate" placeholder="종료 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
 
-        <button @click="fetchDong">데이터 불러오기</button>
+        <button @click="fetchGu" class="fetch-button">데이터 불러오기</button>
       </div>
     </div>
 
-    <div v-if="error">에러: {{ error }}</div>
-    <table class="custom-table" v-if="realEstates.length">
+    <div v-if="error" class="error-message">에러: {{ error }}</div>
+    <table v-if="realEstates.length" class="custom-table">
       <thead>
         <tr>
           <th @click="sortTable('dealDate')">
@@ -98,7 +68,7 @@
         </tr>
       </tbody>
     </table>
-    <div v-else>데이터 로딩 중 또는 데이터 없음...</div>
+    <div v-else class="loading-message">데이터 로딩 중 또는 데이터 없음...</div>
   </div>
 </template>
 
@@ -145,7 +115,7 @@ export default {
         11710: '송파구',
         11740: '강동구'
       },
-      maxDate: new Date().toISOString().substr(0, 10), // 오늘 날짜까지만 허용
+      maxDate: new Date().toISOString().substr(0, 10),
       sortKey: '',
       sortOrder: 1,
       currentView: 'guSearch'
@@ -236,28 +206,86 @@ export default {
 </script>
 
 <style scoped>
-.selection-area {
-  margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.real-estate-list {
+  padding: 20px;
 }
+
+.button-container {
+  margin-bottom: 20px;
+}
+
+.button-container button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.button-container button.active {
+  background-color: #0056b3;
+}
+
+.search-container {
+  margin-bottom: 20px;
+}
+
+.selection-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.selection-area select,
+.selection-area input[type='date'] {
+  padding: 8px;
+}
+
+.error-message {
+  color: red;
+}
+
+.loading-message {
+  font-style: italic;
+}
+
 .custom-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
 }
+
 .custom-table th,
 .custom-table td {
   border: 1px solid #ddd;
   padding: 8px;
 }
+
 .custom-table th {
   background-color: #f9f9f9;
   cursor: pointer;
 }
-.custom-table td,
-.custom-table th {
+
+.custom-table th:hover {
+  background-color: #e9e9e9;
+}
+
+.custom-table th,
+.custom-table td {
   text-align: left;
 }
+
+.fetch-button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.fetch-button:hover {
+  background-color: #0056b3;
+}
+
 </style>
