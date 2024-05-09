@@ -644,7 +644,7 @@ export default {
       if (this.tempYear == -1) {
         if(this.infomation.allYear != undefined){
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-          if(returnData[1].length != []) {
+          if(returnData[1] != []) {
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Year', '실거래가'])
@@ -657,7 +657,7 @@ export default {
       } else if (this.tempYear == 1) {
         if(this.infomation.oneYear != undefined){
           returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-          if(returnData[1].length != []) {
+          if(returnData[1] != []) {
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
@@ -670,7 +670,7 @@ export default {
       } else if (this.tempYear == 3) {
         if(this.infomation.threeYear != undefined){
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
-          if(returnData[1].length != []) {
+          if(returnData[1] != []) {
             console.log('returnData',returnData)
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
