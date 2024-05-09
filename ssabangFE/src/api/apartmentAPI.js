@@ -12,11 +12,11 @@ const searchKeyword = async (apartmentName) => {
     return []
   }
 }
-const getApartmentData = async (aptcode) => {
+const getApartmentData = async (aptcode,dongName) => {
   try {
     const response = await axiosClient.get(
-      // `${API_URL}/house-deals/apartment?apt-code=${aptcode}&sort-option=DESC`
-      `/house-deals?apartment-name=${aptcode}&sort-option=DESC`
+      // `${API_URL}/house-deals/apartment?apt-code=${aptcode}&dongName=${}2&sort-option=DESC`
+      `/house-deals?apartment-name=${aptcode}&dongName=${dongName}&sort-option=DESC`
     )
     return response.data.result
   } catch (error) {

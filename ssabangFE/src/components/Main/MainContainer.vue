@@ -49,7 +49,7 @@
               alt="Apartment Icon"
               style="width: 12px; height: 12px"
             />
-            {{ deal.keyword }}
+            {{ deal.keyword }} {{ deal.dongName ? '-' + deal.dongName : '- 동검색' }}
           </div>
         </div>
         <div v-else>
@@ -114,12 +114,17 @@
     </div>
 
     <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck">
-      <div class="top-box" v-for="(topList, index) in topLists" :key="index" >
+      <div class="top-box" v-for="(topList, index) in topLists" :key="index">
         <h2 class="box-title">{{ topList.title }}</h2>
         <!-- <ol class="list-group">
           <li v-for="(item, i) in topList.items" :key="i" class="list-item">{{ `${item[0]} - ${item[1]}`}}</li>
         </ol> -->
-        <GoogleChart :data="topList.chartData" :options="topList.chartOptions" :type="topList.chartType" style="width: 110%; height: 200px;"/>
+        <GoogleChart
+          :data="topList.chartData"
+          :options="topList.chartOptions"
+          :type="topList.chartType"
+          style="width: 110%; height: 200px"
+        />
       </div>
     </div>
 
@@ -138,7 +143,15 @@
         </button>
       </div>
 
-      <div style="max-width: 100%; min-height: 60px; overflow-x: auto; display: flex">
+      <div
+        style="
+          max-width: 100%;
+          min-height: 60px;
+          overflow-y: hidden;
+          display: flex;
+          overflow-x: auto;
+        "
+      >
         <div style="display: flex; min-height: 60px">
           <div
             style="
@@ -186,7 +199,12 @@
         <div>평균 {{ this.avgPrice }}/3.3㎡</div>
       </div>
 
-      <GoogleChart :data="chartData" :options="chartOptions" :type="chartType" style="width: 110%; height: 200px;" />
+      <GoogleChart
+        :data="chartData"
+        :options="chartOptions"
+        :type="chartType"
+        style="width: 110%; height: 200px"
+      />
       <div class="flex-center">
         <div
           class="date-container clickStyle"
@@ -212,7 +230,11 @@
       </div>
       <div class="georae">
         <div class="silgeorae">
-          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px;  margin-right: 1%;" />
+          <img
+            src="../../assets/apartment.png"
+            alt="Apartment Icon"
+            style="width: 20px; height: 20px; margin-right: 1%"
+          />
           <div>실거래가</div>
         </div>
         <div class="list-between">
@@ -234,7 +256,11 @@
       <div class="convenience">
         <div>
           <div class="silgeorae">
-            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+            <img
+              src="../../assets/school.png"
+              alt="Apartment Icon"
+              style="width: 20px; height: 20px; margin-right: 1%"
+            />
             <div>학군정보</div>
           </div>
           <div class="list-between">
@@ -252,9 +278,13 @@
 
         <div>
           <div class="silgeorae">
-            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
-              <div>역세권정보</div>
-            </div>
+            <img
+              src="../../assets/subway.png"
+              alt="Apartment Icon"
+              style="width: 20px; height: 20px; margin-right: 1%"
+            />
+            <div>역세권정보</div>
+          </div>
           <div class="list-between">
             <div>역</div>
             <div>거리</div>
@@ -392,7 +422,7 @@ export default {
           },
           chartType: 'ColumnChart'
         }
-      ],
+      ]
     }
   },
   async mounted() {
@@ -543,33 +573,43 @@ export default {
       })
     },
     updateTopLists() {
-      this.guMarkers.sort((a, b) => a.amount - b.amount);
-      this.dongMarkers.sort((a, b) => a.amount - b.amount);
+      this.guMarkers.sort((a, b) => a.amount - b.amount)
+      this.dongMarkers.sort((a, b) => a.amount - b.amount)
 
       // 비싼 구 5개
-      this.topLists[0].items = this.guMarkers.slice(-5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
-      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items];
+      this.topLists[0].items = this.guMarkers
+        .slice(-5)
+        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+        .reverse()
+      this.topLists[0].chartData = [['자치구', 'Amount'], ...this.topLists[0].items]
 
       // 싼 구 5개
-      this.topLists[1].items = this.guMarkers.slice(0, 5).map(marker => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
-      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items];
+      this.topLists[1].items = this.guMarkers
+        .slice(0, 5)
+        .map((marker) => [marker.sgg_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+      this.topLists[1].chartData = [['자치구', 'Amount'], ...this.topLists[1].items]
 
       // 비싼 동 5개
-      this.topLists[2].items = this.dongMarkers.slice(-5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]).reverse();
-      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items];
+      this.topLists[2].items = this.dongMarkers
+        .slice(-5)
+        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+        .reverse()
+      this.topLists[2].chartData = [['법정동', 'Amount'], ...this.topLists[2].items]
 
       // 싼 동 5개
-      this.topLists[3].items = this.dongMarkers.slice(0, 5).map(marker => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))]);
-      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items];
-    
-      this.topLoadingCheck = true;
+      this.topLists[3].items = this.dongMarkers
+        .slice(0, 5)
+        .map((marker) => [marker.bjdong_nm, parseFloat((marker.amount / 10000).toFixed(2))])
+      this.topLists[3].chartData = [['법정동', 'Amount'], ...this.topLists[3].items]
+
+      this.topLoadingCheck = true
     },
 
     handelUpdateMarkers(event) {
       clearTimeout(this.inputTimer)
       this.inputTimer = setTimeout(() => {
         this.updateMarkers()
-      }, 500)
+      }, 300)
     },
     handleInput(event) {
       clearTimeout(this.inputTimer)
@@ -584,15 +624,25 @@ export default {
       try {
         if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
           this.infomation = await getApartmentData(
-            deal?.keyword || deal?.apartmentName || deal?.buildingName
+            deal?.keyword || deal?.apartmentName || deal?.buildingName,
+            deal?.dongName
           )
+          if (this.map && this.infomation.latitude && this.infomation.longitude) {
+            this.map.setCenter(
+              new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
+            )
+            this.map.setLevel(3)
+            this.lat = this.infomation.latitude
+            this.lng = this.infomation.longitude
+            // this.updateMarkers()
+          }
           console.log(this.infomation)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
           this.subway.distance = this.calculateDistance(
             this.infomation.latitude,
             this.infomation.longitude,
-            this.subway.lat, 
+            this.subway.lat,
             this.subway.lng
           )
           this.subway.time = this.calculateTravelTime(this.subway.distance, 4.8)
@@ -615,15 +665,6 @@ export default {
           this.drawChartSection()
 
           // 지도 중심을 업데이트하는 로직 추가
-          if (this.map && this.infomation.latitude && this.infomation.longitude) {
-            this.map.setCenter(
-              new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
-            )
-            this.map.setLevel(3)
-            this.lat = this.infomation.latitude
-            this.lng = this.infomation.longitude
-            this.updateMarkers()
-          }
         } else {
           this.infomation = await getDongData(deal.keyword)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
@@ -642,40 +683,40 @@ export default {
 
       let returnData = []
       if (this.tempYear == -1) {
-        if(this.infomation.allYear != undefined){
+        if (this.infomation.allYear != undefined) {
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
-          if(returnData[1].length != []) {
+          if (returnData[1].length != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Year', '실거래가'])
-          } else{
+          } else {
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 1) {
-        if(this.infomation.oneYear != undefined){
+        if (this.infomation.oneYear != undefined) {
           returnData = calculateMonthlyAverage(this.infomation.oneYear, this.tempArea)
-          if(returnData[1].length != []) {
+          if (returnData[1].length != []) {
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Month', '실거래가'])
-          } else{
+          } else {
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
           alert('해당 기간 거래내역이 없습니다.')
         }
       } else if (this.tempYear == 3) {
-        if(this.infomation.threeYear != undefined){
+        if (this.infomation.threeYear != undefined) {
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
-          if(returnData[1].length != []) {
-            console.log('returnData',returnData)
+          if (returnData[1].length != []) {
+            console.log('returnData', returnData)
             this.chartData = returnData[0]
-            this.tempDeal = returnData[1] 
+            this.tempDeal = returnData[1]
             this.chartData.unshift(['Month', '실거래가'])
-          } else{
+          } else {
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
@@ -998,6 +1039,8 @@ export default {
   display: flex;
   height: 90vh;
   position: relative;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .map-container {
