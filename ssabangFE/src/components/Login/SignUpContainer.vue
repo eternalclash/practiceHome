@@ -8,7 +8,7 @@
         <input type="text" v-model="name" placeholder="이름" required />
       </div>
       <div class="input-group">
-        <input type="text" v-model="email" placeholder="아이디 (이메일)" required />
+        <input type="email" v-model="email" placeholder="아이디 (이메일)" required />
       </div>
       <div class="input-group">
         <input type="password" v-model="password" placeholder="비밀번호" required />
@@ -141,6 +141,7 @@ export default {
   width: 100%;
 }
 input[type='text'],
+input[type='email'],
 input[type='password'] {
   border: none;
   height: 5vh;

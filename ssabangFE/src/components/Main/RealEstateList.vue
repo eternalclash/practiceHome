@@ -51,6 +51,7 @@
           </th>
           <th @click="sortTable('address')">주소명 <span v-html="sortIcon('address')"></span></th>
           <th @click="sortTable('area')">면적 <span v-html="sortIcon('area')"></span></th>
+          <th @click="sortTable('dealAmount')">가격(억) <span v-html="sortIcon('dealAmount')"></span></th>
           <th @click="sortTable('buildYear')">
             건축년도 <span v-html="sortIcon('buildYear')"></span>
           </th>
@@ -63,12 +64,13 @@
           <td>{{ item.apartmentName }}</td>
           <td>{{ item.address }}</td>
           <td>{{ item.area }}</td>
+          <td>{{ parseFloat((item.dealAmount / 10000).toFixed(2)) }}</td>
           <td>{{ item.buildYear }}</td>
           <td>{{ item.floor }}</td>
         </tr>
       </tbody>
     </table>
-    <div v-else class="loading-message">데이터 로딩 중 또는 데이터 없음...</div>
+    <div v-else class="loading-message">데이터 준비 중</div>
   </div>
 </template>
 

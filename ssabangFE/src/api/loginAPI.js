@@ -4,6 +4,8 @@ const postSignup = async (data) => {
     const response = await axiosClient.post(`/members/new`, data, {
       withCredentials: true
     })
+    console.log(response.data)
+    if(response.data.result.status == 400) throw error;
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)

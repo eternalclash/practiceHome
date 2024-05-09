@@ -43,7 +43,8 @@
             class="deal-item"
             @click="handleApartment(deal)"
           >
-            <img
+            <div>
+              <img
               src="../../assets/apartment.png"
               v-if="deal.type == 'APARTMENT'"
               alt="Apartment Icon"
@@ -55,7 +56,8 @@
               alt="Apartment Icon"
               style="width: 12px; height: 12px"
             />
-            {{ deal.keyword }} {{ deal.dongName ? '- ' + deal.dongName : '- 이동하기' }}
+              {{ deal.keyword }} {{ deal.dongName ? '- ' + deal.dongName : '- 이동하기' }}
+            </div>
           </div>
         </div>
         <div v-else>
@@ -96,13 +98,21 @@
               class="deal-item"
               @click="handleApartment(deal)"
             >
-              <img
-                src="../../assets/apartment.png"
-                v-if="deal.type == 'APARTMENT'"
-                alt="Apartment Icon"
-                style="width: 12px; height: 12px"
-              />
-              {{ deal.buildingName }}
+              <div>
+                <img
+                  src="../../assets/apartment.png"
+                  v-if="deal.type == 'APARTMENT'"
+                  alt="Apartment Icon"
+                  style="width: 100%; height: 12px"
+                />
+                <div>
+                  {{ deal.buildingName }} {{ deal.dongName ? '- ' + deal.dongName : '- 동검색' }}
+                </div>
+              </div>
+
+              <div style="cursor: pointer" @click="deleteZzim(deal.buildingName, deal.dongName)">
+                X
+              </div>
             </div>
           </div>
           <div v-else>
@@ -115,11 +125,11 @@
       <div id="map" style="width: 100%; height: 100%"></div>
     </div>
 
-    <div class="info-group" v-if="Object.keys(deal).length <= 0 && !this.topLoadingCheck">
+    <div class="info-group" v-if="Object.keys(deal).length <= 0 && !this.topLoadingCheck && dongChangInfo.length == 0">
       <h2>로딩중 입니다.</h2>
     </div>
 
-    <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck">
+    <div class="info-group" v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck && dongChangInfo.length == 0">
       <div class="top-box" v-for="(topList, index) in topLists" :key="index" >
         <h2 class="box-title">{{ topList.title }}</h2>
         <!-- <ol class="list-group">
@@ -129,17 +139,36 @@
       </div>
     </div>
 
-    <div class="info-group" v-if="Object.keys(deal).length > 0">
+    <div class="info-group" v-if="dongChangInfo.length != 0">
+      <div class="dongChang-box">
+        <h2 class="dongChang-title">
+          <img
+              src="../../assets/apartment.png"
+              alt="Apartment Icon"
+              style="width: 24px; height: 24px"
+            />
+            {{ dongChangInfo[0].dongName }} 아파트 리스트</h2>
+          <ul class="dongChang-group">
+            <li v-for="(item) in dongChangInfo" class="dongChang-item" @click="handleApartment(item)">{{ item.apartmentName }}</li>
+          </ul>
+      </div>
+    </div>
+
+    <div class="info-group" v-if="Object.keys(deal).length > 0 && dongChangInfo.length == 0">
       <div class="apt-title">
         {{ infomation.apartmentName }}
         <button
           v-if="zzimCheck == false"
-          @click="addZzim(infomation.apartmentName)"
+          @click="addZzim(infomation.apartmentName, infomation.dongName)"
           class="favorite-button"
         >
           찜 하기
         </button>
-        <button v-else class="notfavorite-button" @click="deleteZzim(infomation.apartmentName)">
+        <button
+          v-else
+          class="notfavorite-button"
+          @click="deleteZzim(infomation.apartmentName, infomation.dongName)"
+        >
           찜 완료
         </button>
       </div>
@@ -315,6 +344,7 @@ import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
 import { calculateHalfAverage } from './changSectionHalf'
 import { postZzim, getZzim } from '@/api/zzimAPI'
+import { takeException } from '@/api/exception'
 export default {
   name: 'MainContainer',
   data() {
@@ -331,8 +361,8 @@ export default {
       deals: [],
       deal: {},
 
-      lat: 37.566826,
-      lng: 126.9786567,
+      lat: 37.5124641,
+      lng: 127.102543,
 
       infomation: {
         apartmentName: '',
@@ -419,6 +449,7 @@ export default {
           chartType: 'ColumnChart'
         }
       ],
+      dongChangInfo : []
     }
   },
   async mounted() {
@@ -427,7 +458,6 @@ export default {
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
     this.updateTopLists()
-    this.getZzim() // Load the zzim list on component mount
   },
   components: {
     GoogleChart
@@ -436,12 +466,11 @@ export default {
     async addToFavorites() {
       try {
         // Here we use 'apartmentName' assuming it is the unique identifier for the building
-
-        await postZzim(this.infomation.apartmentName)
         alert('찜 목록에 추가되었습니다.')
+        await postZzim(this.infomation.apartmentName)
       } catch (error) {
-        console.error('Error adding to favorites:', error)
         alert('찜 추가 중 오류가 발생했습니다.')
+        console.error('Error adding to favorites:', error)
       }
     },
     calculateDistance(lat1, lon1, lat2, lon2) {
@@ -479,6 +508,7 @@ export default {
     },
     toggleZzimResults() {
       this.showZzimResults = !this.showZzimResults
+      if (this.showZzimResults == true) this.getZzim() // Load the zzim list on component mount
     },
     clearMarkers() {
       this.markers.forEach((m) => {
@@ -502,7 +532,7 @@ export default {
         overlayElement.className = 'overlay-info'
         overlayElement.innerHTML = `
       <div class="overlay-number">${name}</div>
-  
+      <div class="overlay-number">${formattedPrice}</div>
     `
 
         // 클릭 이벤트 리스너 직접 추가
@@ -608,11 +638,13 @@ export default {
     },
     async handleApartment(deal) {
       try {
+        this.dongChangInfo = []
         if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
           this.infomation = await getApartmentData(
             deal?.keyword || deal?.apartmentName || deal?.buildingName,
             deal?.dongName
           )
+          this.infomation.dongName = deal.dongName
           if (this.map && this.infomation.latitude && this.infomation.longitude) {
             this.map.setCenter(
               new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
@@ -620,7 +652,7 @@ export default {
             this.map.setLevel(3)
             this.lat = this.infomation.latitude
             this.lng = this.infomation.longitude
-            // this.updateMarkers()
+            this.updateMarkers()
           }
           console.log(this.infomation)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
@@ -647,12 +679,12 @@ export default {
 
           this.tempYear = '-1'
           this.tempArea = '-1'
-
           this.drawChartSection()
 
           // 지도 중심을 업데이트하는 로직 추가
         } else {
           this.infomation = await getDongData(deal.keyword)
+          this.dongChangInfo = this.infomation
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.displayApartmentMarkers(this.infomation)
         }
@@ -668,6 +700,7 @@ export default {
       let totalPrice = 0
 
       let returnData = []
+
       if (this.tempYear == -1) {
         if(this.infomation.allYear != undefined){
           returnData = calculateYearlyAverage(this.infomation.allYear, this.tempArea)
@@ -676,10 +709,10 @@ export default {
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Year', '실거래가'])
           } else{
-            alert('해당 기간 거래내역이 없습니다.')
+            alert('해당 기간 거래정보가 없습니다.')
           }
         } else {
-          alert('해당 기간 거래내역이 없습니다.')
+          alert('해당 기간 거래정보가 없습니다.')
         }
       } else if (this.tempYear == 1) {
         if(this.infomation.oneYear != undefined){
@@ -689,10 +722,10 @@ export default {
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
           } else {
-            alert('해당 기간 거래내역이 없습니다.')
+            alert('해당 기간 거래정보가 없습니다.')
           }
         } else {
-          alert('해당 기간 거래내역이 없습니다.')
+          alert('해당 기간 거래정보가 없습니다.')
         }
       } else if (this.tempYear == 3) {
         if(this.infomation.threeYear != undefined){
@@ -703,10 +736,10 @@ export default {
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
           } else{
-            alert('해당 기간 거래내역이 없습니다.')
+            alert('해당 기간 거래정보가 없습니다.')
           }
         } else {
-          alert('해당 기간 거래내역이 없습니다.')
+          alert('해당 기간 거래정보가 없습니다.')
         }
       }
 
@@ -828,25 +861,25 @@ export default {
 
       return false // zzimList가 배열이 아니거나 비어있으면 false 반환
     },
-    async addZzim(buildingName) {
+    async addZzim(buildingName, dongName) {
       if (!localStorage.getItem('access')) {
-        alert('로그인 후 찜기능을 이용해주세요!')
+        takeException()
         return
       }
 
-      await postZzim(buildingName)
-      this.zzimCheck = true
+      await postZzim(buildingName, dongName)
       alert('찜 목록에 추가되었습니다.')
+      this.zzimCheck = true
       await this.getZzim() // Update the zzim list displayed
     },
 
-    async deleteZzim(buildingName) {
+    async deleteZzim(buildingName, dongName) {
       let zzimList = await getZzim()
 
       if (zzimList && Array.isArray(zzimList)) {
-        await postZzim(buildingName)
-        this.zzimCheck = false
         alert('삭제 완료했습니다.')
+        this.zzimCheck = false
+        await postZzim(buildingName, dongName)
         await this.getZzim()
       }
     },
@@ -922,6 +955,8 @@ export default {
   padding: 5px 0;
   border-bottom: 1px solid #eee;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
 }
 
 .input[type='text'] {
@@ -1047,9 +1082,10 @@ export default {
 
 .info-group {
   width: 30%; /* 여백 고려하여 계산 */
-  height: 100% - 0.3px;
+  max-height: 100% - 0.3px;
   border-top: 0.3px solid lightgray;
-  /* overflow-y: scroll;  */
+  overflow-y: scroll;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -1115,5 +1151,26 @@ export default {
 .box-title {
   margin-bottom: 10px;
   text-align: center;
+}
+
+.dongChang-box {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+.dongChang-title {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.dongChang-item {
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  transition: background-color 0.3s;
+}
+.dongChang-item:hover {
+  background-color: #e0e0e0;
 }
 </style>

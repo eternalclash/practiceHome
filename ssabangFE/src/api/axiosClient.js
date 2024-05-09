@@ -4,8 +4,7 @@ import { takeException } from './exception'
 
 // Axios 인스턴스 생성
 const axiosClient = axios.create({
-  baseURL: 'http://ec2-43-200-173-75.ap-northeast-2.compute.amazonaws.com:8080/api'
-  // baseURL: 'http://localhost:8080/api'
+  baseURL: 'http://43.200.173.75:8080/api'
 })
 
 // 요청 인터셉터 추가
@@ -18,7 +17,7 @@ axiosClient.interceptors.request.use(
     return config
   },
   (error) => {
-    takeException();
+    takeException()
     return Promise.reject(error)
   }
 )

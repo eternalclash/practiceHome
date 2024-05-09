@@ -21,7 +21,8 @@ const getApartmentData = async (aptcode,dongName) => {
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
-    return []
+    alert('거래 정보가 없습니다.')
+    throw new error;
   }
 }
 

@@ -48,7 +48,6 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
 header {
   overflow: hidden;
 }
@@ -90,8 +89,5 @@ button:hover {
 }
 .hover {
   cursor: pointer;
-}
-* {
-  font-family: "Jua", sans-serif;
 }
 </style>
