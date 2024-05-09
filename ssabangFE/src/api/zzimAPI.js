@@ -16,6 +16,7 @@ const postZzim = async (buildingName) => {
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
+    takeException()
     throw error
   }
 }

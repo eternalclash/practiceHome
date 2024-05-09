@@ -49,7 +49,13 @@
               alt="Apartment Icon"
               style="width: 12px; height: 12px"
             />
-            {{ deal.keyword }}
+            <img
+              src="../../assets/click.png"
+              v-if="deal.type == 'DONG'"
+              alt="Apartment Icon"
+              style="width: 12px; height: 12px"
+            />
+            {{ deal.keyword }} {{ deal.dongName ? '- ' + deal.dongName : '- 이동하기' }}
           </div>
         </div>
         <div v-else>
@@ -138,7 +144,15 @@
         </button>
       </div>
 
-      <div style="max-width: 100%; min-height: 60px; overflow-x: auto; display: flex">
+      <div
+        style="
+          max-width: 100%;
+          min-height: 60px;
+          overflow-y: hidden;
+          display: flex;
+          overflow-x: auto;
+        "
+      >
         <div style="display: flex; min-height: 60px">
           <div
             style="
@@ -212,7 +226,11 @@
       </div>
       <div class="georae">
         <div class="silgeorae">
-          <img src="../../assets/apartment.png" alt="Apartment Icon" style="width: 20px; height: 20px;  margin-right: 1%;" />
+          <img
+            src="../../assets/apartment.png"
+            alt="Apartment Icon"
+            style="width: 20px; height: 20px; margin-right: 1%"
+          />
           <div>실거래가</div>
         </div>
         <div class="list-between">
@@ -234,7 +252,11 @@
       <div class="convenience">
         <div>
           <div class="silgeorae">
-            <img src="../../assets/school.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
+            <img
+              src="../../assets/school.png"
+              alt="Apartment Icon"
+              style="width: 20px; height: 20px; margin-right: 1%"
+            />
             <div>학군정보</div>
           </div>
           <div class="list-between">
@@ -252,9 +274,13 @@
 
         <div>
           <div class="silgeorae">
-            <img src="../../assets/subway.png" alt="Apartment Icon" style="width: 20px; height: 20px; margin-right: 1%;" />
-              <div>역세권정보</div>
-            </div>
+            <img
+              src="../../assets/subway.png"
+              alt="Apartment Icon"
+              style="width: 20px; height: 20px; margin-right: 1%"
+            />
+            <div>역세권정보</div>
+          </div>
           <div class="list-between">
             <div>역</div>
             <div>거리</div>
@@ -569,7 +595,7 @@ export default {
       clearTimeout(this.inputTimer)
       this.inputTimer = setTimeout(() => {
         this.updateMarkers()
-      }, 500)
+      }, 300)
     },
     handleInput(event) {
       clearTimeout(this.inputTimer)
@@ -584,8 +610,18 @@ export default {
       try {
         if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
           this.infomation = await getApartmentData(
-            deal?.keyword || deal?.apartmentName || deal?.buildingName
+            deal?.keyword || deal?.apartmentName || deal?.buildingName,
+            deal?.dongName
           )
+          if (this.map && this.infomation.latitude && this.infomation.longitude) {
+            this.map.setCenter(
+              new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
+            )
+            this.map.setLevel(3)
+            this.lat = this.infomation.latitude
+            this.lng = this.infomation.longitude
+            // this.updateMarkers()
+          }
           console.log(this.infomation)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
@@ -615,15 +651,6 @@ export default {
           this.drawChartSection()
 
           // 지도 중심을 업데이트하는 로직 추가
-          if (this.map && this.infomation.latitude && this.infomation.longitude) {
-            this.map.setCenter(
-              new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
-            )
-            this.map.setLevel(3)
-            this.lat = this.infomation.latitude
-            this.lng = this.infomation.longitude
-            this.updateMarkers()
-          }
         } else {
           this.infomation = await getDongData(deal.keyword)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
@@ -661,7 +688,7 @@ export default {
             this.chartData = returnData[0]
             this.tempDeal = returnData[1] 
             this.chartData.unshift(['Month', '실거래가'])
-          } else{
+          } else {
             alert('해당 기간 거래내역이 없습니다.')
           }
         } else {
@@ -998,6 +1025,8 @@ export default {
   display: flex;
   height: 90vh;
   position: relative;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .map-container {
