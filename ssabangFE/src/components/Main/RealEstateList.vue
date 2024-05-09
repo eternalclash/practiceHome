@@ -35,7 +35,7 @@
         <input type="date" v-model="selectedStartDate" placeholder="시작 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
         <input type="date" v-model="selectedEndDate" placeholder="종료 날짜 선택" :min="'2022-01-01'" :max="maxDate" />
 
-        <button @click="fetchGu" class="fetch-button">데이터 불러오기</button>
+        <button @click="fetchDong" class="fetch-button">데이터 불러오기</button>
       </div>
     </div>
 
@@ -152,6 +152,7 @@ export default {
         alert('모든 필드를 채워주세요.')
         return
       }
+      this.realEstates = []
       const formattedStartDate = this.selectedStartDate.replaceAll('-', '')
       const formattedEndDate = this.selectedEndDate.replaceAll('-', '')
       try {
@@ -175,6 +176,7 @@ export default {
         alert('모든 필드를 채워주세요.')
         return
       }
+      this.realEstates = []
       const formattedStartDate = this.selectedStartDate.replaceAll('-', '')
       const formattedEndDate = this.selectedEndDate.replaceAll('-', '')
       try {
@@ -221,9 +223,15 @@ export default {
   background-color: #007bff;
   color: #fff;
   cursor: pointer;
+  border-radius: 5px; 
+  transition: background-color 0.3s ease; 
 }
 
 .button-container button.active {
+  background-color: #0056b3;
+}
+
+.button-container button:hover {
   background-color: #0056b3;
 }
 
@@ -241,6 +249,8 @@ export default {
 .selection-area select,
 .selection-area input[type='date'] {
   padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
 .error-message {
@@ -282,6 +292,8 @@ export default {
   background-color: #007bff;
   color: #fff;
   cursor: pointer;
+  border-radius: 5px; 
+  transition: background-color 0.3s ease; 
 }
 
 .fetch-button:hover {
