@@ -1,106 +1,111 @@
 <template>
   <div>
-    <h1>서울시 법정동 아파트 거래 내역</h1>
-    <select v-model="selectedDong">
-      <option disabled value="">지역을 선택하세요</option>
-      <option v-for="(dong, code) in lawDongs" :key="code" :value="code">
-        {{ dong }}
-      </option>
-    </select>
-    <button @click="fetchData">데이터 불러오기</button>
-    <select v-model="selectedDong">
-      <option disabled value="">기본순</option>
-      <option v-for="(dong, code) in sortData" :key="code" :value="code">
-        {{ dong }}
-      </option>
-    </select>
+    <h1>서울시 법정동 및 구 아파트 거래 내역</h1>
+    <button @click="showGuSearch">구 검색</button>
+    <button @click="showDongSearch">동 검색</button>
+    <div v-if="currentView === 'guSearch'">
+      <div class="selection-area">
+        <select v-model="selectedGu">
+          <option disabled value="">구를 선택하세요</option>
+          <option v-for="(gu, code) in guList" :key="gu" :value="gu">
+            {{ gu }}
+          </option>
+        </select>
+
+        <!-- 날짜 선택 입력 필드 -->
+        <input
+          type="date"
+          v-model="selectedStartDate"
+          placeholder="시작 날짜 선택"
+          :min="'2022-01-01'"
+          :max="maxDate"
+        />
+        <input
+          type="date"
+          v-model="selectedEndDate"
+          placeholder="종료 날짜 선택"
+          :min="'2022-01-01'"
+          :max="maxDate"
+        />
+
+        <button @click="fetchGu">데이터 불러오기</button>
+      </div>
+    </div>
+
+    <!-- 동 검색 활성화 시 보여줄 컴포넌트 -->
+    <div v-if="currentView === 'dongSearch'">
+      <div class="selection-area">
+        <select v-model="selectedGuCode" @change="updateDongList">
+          <option disabled value="">구를 선택하세요</option>
+          <option v-for="(gu, code) in guList" :key="gu" :value="code">
+            {{ gu }}
+          </option>
+        </select>
+
+        <select v-model="selectedDong">
+          <option disabled value="">동을 선택하세요</option>
+          <option v-for="(dong, code) in dongList" :key="dong" :value="dong">
+            {{ dong.dongName }}
+          </option>
+        </select>
+
+        <!-- 날짜 선택 입력 필드 -->
+        <input
+          type="date"
+          v-model="selectedStartDate"
+          placeholder="시작 날짜 선택"
+          :min="'2022-01-01'"
+          :max="maxDate"
+        />
+        <input
+          type="date"
+          v-model="selectedEndDate"
+          placeholder="종료 날짜 선택"
+          :min="'2022-01-01'"
+          :max="maxDate"
+        />
+
+        <button @click="fetchDong">데이터 불러오기</button>
+      </div>
+    </div>
+
     <div v-if="error">에러: {{ error }}</div>
-    <!-- <ul v-if="realEstates.length > 0">
-      <li v-for="(item, index) in realEstates" :key="index">
-        {{ item.법정동 }}: {{ item.거래금액 }}만원 - {{ item.아파트 }}
-      </li>
-    </ul>
-    <div v-else>데이터 로딩 중...</div> -->
-    <table class="custom-table">
+    <table class="custom-table" v-if="realEstates.length">
       <thead>
         <tr>
-          <th>거래일자</th>
-          <th>아파트명</th>
-          <th>주소명</th>
-          <th>면적</th>
-          <th>건축일수</th>
-          <th>층</th>
+          <th @click="sortTable('dealDate')">
+            거래일자 <span v-html="sortIcon('dealDate')"></span>
+          </th>
+          <th @click="sortTable('apartmentName')">
+            아파트명 <span v-html="sortIcon('apartmentName')"></span>
+          </th>
+          <th @click="sortTable('address')">주소명 <span v-html="sortIcon('address')"></span></th>
+          <th @click="sortTable('area')">면적 <span v-html="sortIcon('area')"></span></th>
+          <th @click="sortTable('buildYear')">
+            건축년도 <span v-html="sortIcon('buildYear')"></span>
+          </th>
+          <th @click="sortTable('floor')">층 <span v-html="sortIcon('floor')"></span></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(item, index) in tableData" :key="index">
-          <td>{{ item.date }}</td>
+        <tr v-for="(item, index) in realEstates" :key="index">
+          <td>{{ item.dealDate }}</td>
           <td>{{ item.apartmentName }}</td>
           <td>{{ item.address }}</td>
           <td>{{ item.area }}</td>
-          <td>{{ item.constructionDays }}</td>
+          <td>{{ item.buildYear }}</td>
           <td>{{ item.floor }}</td>
         </tr>
       </tbody>
     </table>
-    >
+    <div v-else>데이터 로딩 중 또는 데이터 없음...</div>
   </div>
 </template>
-<style scoped>
-.custom-table {
-  width: 100%;
-  font-size: 1.5rem;
-  border-collapse: collapse;
-}
 
-.custom-table th,
-.custom-table td {
-  border: 1px solid black;
-  padding: 8px;
-  text-align: left;
-}
-
-.custom-table th {
-  background-color: #f2f2f2;
-}
-
-.custom-table th:nth-child(1),
-.custom-table td:nth-child(1) {
-  width: 20%;
-}
-.custom-table th:nth-child(2),
-.custom-table td:nth-child(2) {
-  width: 20%;
-}
-.custom-table th:nth-child(3),
-.custom-table td:nth-child(3) {
-  width: 20%;
-}
-.custom-table th:nth-child(4),
-.custom-table td:nth-child(4) {
-  width: 10%;
-}
-.custom-table th:nth-child(5),
-.custom-table td:nth-child(5) {
-  width: 20%;
-}
-.custom-table th:nth-child(6),
-.custom-table td:nth-child(6) {
-  width: 10%;
-}
-
-.custom-table th:nth-child(1),
-.custom-table th:nth-child(2),
-.custom-table th:nth-child(3),
-.custom-table th:nth-child(4),
-.custom-table th:nth-child(5),
-.custom-table th:nth-child(6) {
-  text-align: center;
-}
-</style>
 <script>
-import axios from 'axios'
 import { ref } from 'vue'
+import { getDongPeriod, getGuPeriod, getDongName } from '@/api/houseDealAPI'
+
 export default {
   name: 'RealEstateList',
   data() {
@@ -108,60 +113,151 @@ export default {
       realEstates: [],
       error: null,
       selectedDong: '',
-      selectedSort: '', // 정렬 기준 선택
-      lawDongs: {
+      selectedGu: '',
+      selectedGuCode: '',
+      selectedStartDate: '',
+      selectedEndDate: '',
+      dongList: {},
+      guList: {
         11110: '종로구',
-      11140: '중구',
-      11170: '용산구',
-      11200: '성동구',
-      11215: '광진구',
-      11230: '동대문구',
-      11260: '중랑구',
-      11290: '성북구',
-      11305: '강북구',
-      11320: '도봉구',
-      11350: '노원구',
-      11380: '은평구',
-      11410: '서대문구',
-      11440: '마포구',
-      11470: '양천구',
-      11500: '강서구',
-      11530: '구로구',
-      11545: '금천구',
-      11560: '영등포구',
-      11590: '동작구',
-      11620: '관악구',
-      11650: '서초구',
-      11680: '강남구',
-      11710: '송파구',
-      11740: '강동구'
+        11140: '중구',
+        11170: '용산구',
+        11200: '성동구',
+        11215: '광진구',
+        11230: '동대문구',
+        11260: '중랑구',
+        11290: '성북구',
+        11305: '강북구',
+        11320: '도봉구',
+        11350: '노원구',
+        11380: '은평구',
+        11410: '서대문구',
+        11440: '마포구',
+        11470: '양천구',
+        11500: '강서구',
+        11530: '구로구',
+        11545: '금천구',
+        11560: '영등포구',
+        11590: '동작구',
+        11620: '관악구',
+        11650: '서초구',
+        11680: '강남구',
+        11710: '송파구',
+        11740: '강동구'
       },
-      sortData: {
-        거래일자순:"거래일자순", 아파트명순: "아파트명순", 주소명순: "주소명순", 면적순:"면적순", 건축일수순: "건축일수순", 층순: "층순"
-      }
+      maxDate: new Date().toISOString().substr(0, 10), // 오늘 날짜까지만 허용
+      sortKey: '',
+      sortOrder: 1,
+      currentView: 'guSearch'
     }
   },
   methods: {
-    async fetchData() {
-      if (!this.selectedDong) return;
+    showGuSearch() {
+      this.currentView = 'guSearch'
+    },
+    showDongSearch() {
+      this.currentView = 'dongSearch'
+    },
+    sortTable(key) {
+      if (this.sortKey === key) {
+        this.sortOrder = -this.sortOrder
+      } else {
+        this.sortKey = key
+        this.sortOrder = 1
+      }
+      this.realEstates.sort((a, b) => {
+        if (a[key] < b[key]) return -this.sortOrder
+        if (a[key] > b[key]) return this.sortOrder
+        return 0
+      })
+    },
+    sortIcon(key) {
+      if (this.sortKey === key) {
+        return this.sortOrder === 1 ? '&#9650;' : '&#9660;' // Unicode characters for arrows
+      }
+      return ''
+    },
+    async fetchGu() {
+      if (!this.selectedGu || !this.selectedStartDate || !this.selectedEndDate) {
+        alert('모든 필드를 채워주세요.')
+        return
+      }
+      const formattedStartDate = this.selectedStartDate.replaceAll('-', '')
+      const formattedEndDate = this.selectedEndDate.replaceAll('-', '')
       try {
-        const response = await axios.get(`http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade`, {
-          params: {
-            LAWD_CD: this.selectedDong,
-            DEAL_YMD: '202012',
-            serviceKey: '서비스키'
-          }
-        });
-        this.realEstates = response.data.response.body.item;
-        this.sortRealEstates(); // 데이터를 가져온 후 정렬
-      } catch (e) {
-        this.error = e.toString();
+        const response = await getGuPeriod(this.selectedGu, formattedStartDate, formattedEndDate)
+        this.realEstates = response
+      } catch (error) {
+        this.error = error.toString()
       }
     },
-    sortRealEstates() {
-      // selectedSort에 따라 realEstates 정렬 로직 추가
+    async fetchDong() {
+      if (
+        !this.selectedGuCode ||
+        !this.selectedStartDate ||
+        !this.selectedEndDate ||
+        !this.selectedDong
+      ) {
+        console.log(this.selectedGuCode)
+        console.log(this.selectedStartDate)
+        console.log(this.selectedEndDate)
+        console.log(this.selectedDong)
+        alert('모든 필드를 채워주세요.')
+        return
+      }
+      const formattedStartDate = this.selectedStartDate.replaceAll('-', '')
+      const formattedEndDate = this.selectedEndDate.replaceAll('-', '')
+      try {
+        const response = await getDongPeriod(
+          this.selectedDong.dongName,
+          formattedStartDate,
+          formattedEndDate
+        )
+        this.realEstates = response
+      } catch (error) {
+        this.error = error.toString()
+      }
+    },
+    async updateDongList() {
+      if (!this.selectedGuCode) {
+        alert('구를 선택해주세요.')
+        return
+      }
+      try {
+        const response = await getDongName(this.selectedGuCode) // 임의의 기간으로 동 리스트 요청
+        console.log(response)
+        this.dongList = response
+      } catch (error) {
+        this.error = error.toString()
+      }
     }
   }
-
 }
 </script>
+
+<style scoped>
+.selection-area {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.custom-table th,
+.custom-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+.custom-table th {
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+.custom-table td,
+.custom-table th {
+  text-align: left;
+}
+</style>

@@ -5,6 +5,7 @@ const getZzim = async () => {
     const response = await axiosClient.get(`/memberhouses`)
     return response.data.result
   } catch (error) {
+    takeException()
     return []
   }
 }
@@ -16,6 +17,7 @@ const postZzim = async (buildingName) => {
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
+    takeException()
     throw error
   }
 }
