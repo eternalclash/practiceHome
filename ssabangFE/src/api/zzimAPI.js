@@ -5,7 +5,6 @@ const getZzim = async () => {
     const response = await axiosClient.get(`/memberhouses`)
     return response.data.result
   } catch (error) {
-    takeException()
     return []
   }
 }
