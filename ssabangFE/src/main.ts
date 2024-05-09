@@ -2,7 +2,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import store from './store' // Vuex 스토어 가져오기
+import store  from './store' 
 
 const app = createApp(App)
 
