@@ -90,13 +90,21 @@
               class="deal-item"
               @click="handleApartment(deal)"
             >
-              <img
-                src="../../assets/apartment.png"
-                v-if="deal.type == 'APARTMENT'"
-                alt="Apartment Icon"
-                style="width: 12px; height: 12px"
-              />
-              {{ deal.buildingName }}
+              <div>
+                <img
+                  src="../../assets/apartment.png"
+                  v-if="deal.type == 'APARTMENT'"
+                  alt="Apartment Icon"
+                  style="width: 100%; height: 12px"
+                />
+                <diV
+                  >{{ deal.buildingName }} {{ deal.dongName ? '-' + deal.dongName : '- 동검색' }}
+                </diV>
+              </div>
+
+              <div style="cursor: pointer" @click="deleteZzim(deal.buildingName, deal.dongName)">
+                X
+              </div>
             </div>
           </div>
           <div v-else>
@@ -133,12 +141,16 @@
         {{ infomation.apartmentName }}
         <button
           v-if="zzimCheck == false"
-          @click="addZzim(infomation.apartmentName)"
+          @click="addZzim(infomation.apartmentName, infomation.dongName)"
           class="favorite-button"
         >
           찜 하기
         </button>
-        <button v-else class="notfavorite-button" @click="deleteZzim(infomation.apartmentName)">
+        <button
+          v-else
+          class="notfavorite-button"
+          @click="deleteZzim(infomation.apartmentName, infomation.dongName)"
+        >
           찜 완료
         </button>
       </div>
@@ -319,6 +331,7 @@ import { calculateMonthlyAverage } from './changSection'
 import { calculateYearlyAverage } from './changSectionYear'
 import { calculateHalfAverage } from './changSectionHalf'
 import { postZzim, getZzim } from '@/api/zzimAPI'
+import { takeException } from '@/api/exception'
 export default {
   name: 'MainContainer',
   data() {
@@ -431,7 +444,6 @@ export default {
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
     this.updateTopLists()
-    this.getZzim() // Load the zzim list on component mount
   },
   components: {
     GoogleChart
@@ -483,6 +495,7 @@ export default {
     },
     toggleZzimResults() {
       this.showZzimResults = !this.showZzimResults
+      if (this.showZzimResults == true) this.getZzim() // Load the zzim list on component mount
     },
     clearMarkers() {
       this.markers.forEach((m) => {
@@ -506,7 +519,7 @@ export default {
         overlayElement.className = 'overlay-info'
         overlayElement.innerHTML = `
       <div class="overlay-number">${name}</div>
-  
+      <div class="overlay-number">${formattedPrice}</div>
     `
 
         // 클릭 이벤트 리스너 직접 추가
@@ -627,6 +640,7 @@ export default {
             deal?.keyword || deal?.apartmentName || deal?.buildingName,
             deal?.dongName
           )
+          this.infomation.dongName = deal.dongName
           if (this.map && this.infomation.latitude && this.infomation.longitude) {
             this.map.setCenter(
               new kakao.maps.LatLng(this.infomation.latitude, this.infomation.longitude)
@@ -634,7 +648,7 @@ export default {
             this.map.setLevel(3)
             this.lat = this.infomation.latitude
             this.lng = this.infomation.longitude
-            // this.updateMarkers()
+            this.updateMarkers()
           }
           console.log(this.infomation)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
@@ -842,23 +856,23 @@ export default {
 
       return false // zzimList가 배열이 아니거나 비어있으면 false 반환
     },
-    async addZzim(buildingName) {
+    async addZzim(buildingName, dongName) {
       if (!localStorage.getItem('access')) {
-        alert('로그인 후 찜기능을 이용해주세요!')
+        takeException()
         return
       }
 
-      await postZzim(buildingName)
+      await postZzim(buildingName, dongName)
       this.zzimCheck = true
       alert('찜 목록에 추가되었습니다.')
       await this.getZzim() // Update the zzim list displayed
     },
 
-    async deleteZzim(buildingName) {
+    async deleteZzim(buildingName, dongName) {
       let zzimList = await getZzim()
 
       if (zzimList && Array.isArray(zzimList)) {
-        await postZzim(buildingName)
+        await postZzim(buildingName, dongName)
         this.zzimCheck = false
         alert('삭제 완료했습니다.')
         await this.getZzim()
@@ -936,6 +950,8 @@ export default {
   padding: 5px 0;
   border-bottom: 1px solid #eee;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
 }
 
 .input[type='text'] {
@@ -1061,9 +1077,10 @@ export default {
 
 .info-group {
   width: 30%; /* 여백 고려하여 계산 */
-  height: 100% - 0.3px;
+  max-height: 100% - 0.3px;
   border-top: 0.3px solid lightgray;
-  /* overflow-y: scroll;  */
+  overflow-y: scroll;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }

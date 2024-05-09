@@ -10,9 +10,11 @@ const getZzim = async () => {
   }
 }
 
-const postZzim = async (buildingName) => {
+const postZzim = async (buildingName, dongName) => {
   try {
-    const response = await axiosClient.post(`/memberhouses?buildingName=${buildingName}`)
+    const response = await axiosClient.post(
+      `/memberhouses?buildingName=${buildingName}&dongName=${dongName}`
+    )
     console.log(response.data)
     return response.data.result
   } catch (error) {
