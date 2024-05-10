@@ -19,6 +19,7 @@ export default createStore({
     logout({ commit }) {
       localStorage.removeItem('userToken')
       localStorage.removeItem('access')
+      alert('로그아웃 되었습니다')
       commit('setLoginState', false)
     }
   }

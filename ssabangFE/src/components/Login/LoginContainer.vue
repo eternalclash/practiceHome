@@ -30,6 +30,15 @@ export default {
 
     const login = async () => {
       try {
+        if (
+          username.value == null ||
+          username.value == '' ||
+          password.value == null ||
+          password.value == ''
+        ) {
+          alert('아이디 또는 비밀번호가 공백입니다.')
+          return
+        }
         const userData = {
           email: username.value,
           password: password.value
