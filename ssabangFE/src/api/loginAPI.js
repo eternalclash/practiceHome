@@ -5,11 +5,11 @@ const postSignup = async (data) => {
       withCredentials: true
     })
     console.log(response.data)
-    if(response.data.result.status == 400) throw error;
+    if (response.data.statusCode == 400) throw new Error('Bad Request')
     return response.data.result
   } catch (error) {
     console.error('Error fetching deals:', error)
-    
+
     throw error
   }
 }
@@ -17,6 +17,8 @@ const postSignup = async (data) => {
 const postLogin = async (data) => {
   try {
     const response = await axiosClient.post('/members/login', data)
+    console.log(response.data)
+    if (response.data.statusCode == 400) throw new Error('Bad Request')
     const token = response.headers['access']
     if (token) {
       localStorage.setItem('access', token)

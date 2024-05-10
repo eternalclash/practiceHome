@@ -52,11 +52,7 @@ export default {
         alert('회원가입 성공!')
         this.$router.push({ name: 'LoginContainer' })
       } catch (error) {
-        if (error.response) {
-          alert('존재하는 아이디입니다.')
-        } else {
-          alert('회원가입 중 오류가 발생했습니다.')
-        }
+        alert('존재하는 아이디입니다.')
       }
     },
     goToLogin() {
