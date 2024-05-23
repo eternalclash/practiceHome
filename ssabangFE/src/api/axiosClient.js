@@ -4,7 +4,8 @@ import { takeException } from './exception'
 
 // Axios 인스턴스 생성
 const axiosClient = axios.create({
-  baseURL: 'http://43.200.173.75:8080/api'
+  // baseURL: 'https://api.ssabang.site/api/'
+  baseURL: 'http://localhost:8080/api/'
 })
 
 // 요청 인터셉터 추가

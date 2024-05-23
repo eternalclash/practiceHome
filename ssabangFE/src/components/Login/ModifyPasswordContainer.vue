@@ -17,14 +17,14 @@
         <input type="password" v-model="confirmPassword" placeholder="비밀번호 재확인" required />
       </div>
 
-      <button class="signup-button" @click="signup">회원가입</button>
-      <button class="login-button" @click="goToLogin">로그인 페이지로 돌아가기</button>
+      <button class="signup-button" @click="postPassword">비밀번호 재설정</button>
+      <button class="login-button" @click="goToLogin">돌아가기</button>
     </div>
   </div>
 </template>
 
 <script>
-import { postSignup } from '@/api/loginAPI'
+import { updatePassword } from '@/api/loginAPI'
 
 export default {
   name: 'SignUpContainer',
@@ -37,33 +37,33 @@ export default {
     }
   },
   methods: {
-    async signup() {
+    async postPassword() {
       if (this.password !== this.confirmPassword) {
         alert('비밀번호가 일치하지 않습니다.')
         return
       }
       if (
-          this.name == null ||
-          this.name == '' ||
-          this.email == null ||
-          this.email == '' ||
-          this.password == null ||
-          this.password == ''
-        ) {
-          alert('아이디,이름,비밀번호에 공백이 존재합니다.')
-          return
-        }
+        this.name == null ||
+        this.name == '' ||
+        this.email == null ||
+        this.email == '' ||
+        this.password == null ||
+        this.password == ''
+      ) {
+        alert('아이디,이름,비밀번호에 공백이 존재합니다.')
+        return
+      }
       try {
         const userData = {
           email: this.email,
           name: this.name,
           password: this.password
         }
-        const result = await postSignup(userData)
-        alert('회원가입 성공!')
+        const result = await updatePassword(userData)
+        alert('비밀번호 재설정 성공!')
         this.$router.push({ name: 'LoginContainer' })
       } catch (error) {
-        alert('존재하는 아이디입니다.')
+        alert('비밀번호 오류입니다.')
       }
     },
     goToLogin() {

@@ -39,4 +39,15 @@ const postLogout = async () => {
   }
 }
 
-export { postSignup, postLogin, postLogout }
+const updatePassword =  async (data) => {
+  try {
+    await axiosClient.put('/members/password',data);
+
+  } catch(error) {
+
+  }
+}
+
+
+
+export { postSignup, postLogin, postLogout,updatePassword }

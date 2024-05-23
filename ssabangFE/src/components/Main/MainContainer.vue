@@ -136,6 +136,14 @@
       class="info-group"
       v-if="Object.keys(deal).length <= 0 && this.topLoadingCheck && dongChangInfo.length == 0"
     >
+      <div class="convenience">
+        <div v-for="article in articles" :key="article.link" class="news-item">
+          <h2 v-html="article.title"></h2>
+          <p>{{ cleanText(article.description) }}</p>
+          <a :href="article.link" target="_blank">Read more</a>
+          <p>Published on: {{ formatDate(article.pubDate) }}</p>
+        </div>
+      </div>
       <div class="top-box" v-for="(topList, index) in topLists" :key="index">
         <h2 class="box-title">{{ topList.title }}</h2>
         <!-- <ol class="list-group">
@@ -342,6 +350,14 @@
           </div>
         </div>
       </div>
+      <div class="convenience">
+        <div v-for="article in articles" :key="article.link" class="news-item">
+          <h2 v-html="article.title"></h2>
+          <p>{{ cleanText(article.description) }}</p>
+          <a :href="article.link" target="_blank">Read more</a>
+          <p>Published on: {{ formatDate(article.pubDate) }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -364,6 +380,7 @@ import { calculateYearlyAverage } from './changSectionYear'
 import { calculateHalfAverage } from './changSectionHalf'
 import { postZzim, getZzim } from '@/api/zzimAPI'
 import { takeException } from '@/api/exception'
+import { getNews } from '@/api/naverAPI'
 export default {
   name: 'MainContainer',
   data() {
@@ -379,7 +396,7 @@ export default {
       searchKeyword: '',
       deals: [],
       deal: {},
-
+      articles: [],
       lat: 37.5124641,
       lng: 127.102543,
 
@@ -477,11 +494,47 @@ export default {
     this.guMarkers = await getGuMarker()
     this.updateMarkers()
     this.updateTopLists()
+    this.articles = await getNews()
   },
   components: {
     GoogleChart
   },
   methods: {
+    cleanText(text) {
+      // Remove HTML tags
+      const cleanedText = text.replace(/<\/?[^>]+(>|$)/g, '')
+
+      // Decode HTML entities
+      const textArea = document.createElement('textarea')
+      textArea.innerHTML = cleanedText
+      return textArea.value
+    },
+    startCarousel() {
+      const carouselElement = carousel.value
+      let scrollAmount = 0
+      const scrollStep = 1
+      const maxScroll = carouselElement.scrollWidth - carouselElement.clientWidth
+
+      function step() {
+        if (scrollAmount >= maxScroll) {
+          scrollAmount = 0
+        } else {
+          scrollAmount += scrollStep
+        }
+        carouselElement.scrollTo({
+          left: scrollAmount,
+          behavior: 'smooth'
+        })
+        window.requestAnimationFrame(step)
+      }
+
+      window.requestAnimationFrame(step)
+    },
+
+    formatDate(dateString) {
+      const options = { year: 'numeric', month: 'short', day: 'numeric' }
+      return new Date(dateString).toLocaleDateString(undefined, options)
+    },
     async addToFavorites() {
       try {
         // Here we use 'apartmentName' assuming it is the unique identifier for the building
@@ -560,6 +613,11 @@ export default {
             this.handleApartment(data)
           })
 
+        if (data?.bjdong_nm || data?.sgg_nm) {
+          overlayElement.addEventListener('click', async () => {
+            this.articles = await getNews(name)
+          })
+        }
         const overlay = new kakao.maps.CustomOverlay({
           map: this.map,
           position: position,
@@ -585,6 +643,8 @@ export default {
         // 지도의 현재 레벨에 따라 적절한 API 호출
         const useDong = this.map.getLevel() < 7
         const markersData = useDong ? this.dongMarkers : this.guMarkers
+        console.log(this.dongMarkers)
+        console.log(this.guMarkers)
         console.log('DDDDONG' + markersData)
         this.displayMarkers(markersData)
       }
@@ -675,6 +735,10 @@ export default {
             deal?.keyword || deal?.apartmentName || deal?.buildingName,
             deal?.dongName
           )
+          if (this.infomation.address) {
+            this.articles = await getNews(this.infomation.address.split(' ')[2])
+          }
+
           this.infomation.dongName = deal.dongName
           if (this.map && this.infomation.latitude && this.infomation.longitude) {
             this.map.setCenter(
@@ -1201,7 +1265,40 @@ export default {
   margin-bottom: 5px;
   transition: background-color 0.3s;
 }
-.dongChang-item:hover {
-  background-color: #e0e0e0;
+.carousel-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.carousel {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.news-item {
+  flex: 0 0 auto;
+  width: 90%;
+  margin-bottom: 10px;
+  padding: 3%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.news-item h2 {
+  font-size: 1.5rem;
+}
+
+.news-item p {
+  margin: 10px 0;
+}
+
+.news-item a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.news-item a:hover {
+  text-decoration: underline;
 }
 </style>

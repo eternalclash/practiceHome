@@ -1,10 +1,13 @@
 <template>
   <header class="header-group">
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center">
       <img :src="logoSrc" @click="goHome" alt="Logo" class="header-logo hover" />
       <div @click="goRealEstate" class="realEstate hover">서울시 최근거래가</div>
     </div>
-    <button class="login-button hover" @click="handleAuth">{{ authButtonLabel }}</button>
+    <div style="display: flex; align-items: center; width: 20%">
+      <div @click="goAsk" class="realEstate hover" style="margin-right: 2vw">Q&A</div>
+      <button class="login-button hover" @click="handleAuth">{{ authButtonLabel }}</button>
+    </div>
   </header>
   <router-view />
 </template>
@@ -35,7 +38,10 @@ export default {
     goRealEstate() {
       this.$router.push({ name: 'RealEstateList' })
     },
-    goHome(){
+    goAsk() {
+      this.$router.push({ name: 'AskContainer' })
+    },
+    goHome() {
       this.$router.push({ name: 'MainContainer' })
     }
   },
@@ -83,7 +89,10 @@ button:hover {
   display: flex;
   align-items: center;
   padding: 0 1vw;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
 }
 .header-logo {
 }

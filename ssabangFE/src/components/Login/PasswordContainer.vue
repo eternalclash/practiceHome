@@ -5,63 +5,48 @@
         <div class="logo"></div>
       </div>
 
-      <div class="input-group">
-        <input v-model="username" type="text" placeholder="아이디" required />
+      <div style="display: flex; margin-bottom: 3vh">
+        <input v-model="email" type="text" placeholder="이메일" required style="width: 30vw" />
+        <button class="login-button" @click="handleEmailSend">이메일 전송</button>
       </div>
-      <div class="input-group">
-        <input v-model="password" type="password" placeholder="비밀번호" required />
+      <div style="display: flex">
+        <input v-model="code" type="text" placeholder="인증번호" required style="width: 30vw" />
+        <button class="login-button" @click="handleCodeVerify">인증번호 확인</button>
       </div>
-      <button class="login-button" @click="login">로그인</button>
-      <button class="signup-button" @click="goToSignUp">회원가입</button>
     </div>
-    <div style="cursor: pointer; z-index: 11" @click="goToPassword">비밀번호 찾기</div>
   </div>
 </template>
 
 <script>
-import { useStore } from 'vuex'
-import { postLogin } from '@/api/loginAPI' // API 함수 경로 확인 필요
-import router from '@/router'
-import { ref } from 'vue'
+import { postEmail, postVerify } from '@/api/emailAPI'
 
 export default {
-  setup() {
-    const username = ref('')
-    const password = ref('')
-    const store = useStore()
-
-    const login = async () => {
+  data() {
+    return {
+      email: '',
+      code: ''
+    }
+  },
+  methods: {
+    async handleEmailSend() {
       try {
-        if (
-          username.value == null ||
-          username.value == '' ||
-          password.value == null ||
-          password.value == ''
-        ) {
-          alert('아이디 또는 비밀번호가 공백입니다.')
-          return
-        }
-        const userData = {
-          email: username.value,
-          password: password.value
-        }
-        await postLogin(userData)
-        store.dispatch('performLogin')
-        router.push({ name: 'MainContainer' })
+        const response = await postEmail({ email: this.email })
+        alert('인증번호를 확인해주세요')
       } catch (error) {
-        alert('아이디 또는 비밀번호가 잘못되었습니다.')
+        console.error('Error sending email:', error)
+        alert('이메일 전송에 실패했습니다.')
+      }
+    },
+    async handleCodeVerify() {
+      try {
+        const response = await postVerify({ email: this.email, code: this.code })
+        alert('인증번호가 확인되었습니다.')
+        this.$router.push({ name: 'ModifyPasswordContainer' }) // 인증 성공 시 페이지 이동
+      } catch (error) {
+        console.error('Error verifying code:', error)
+        alert('인증번호 확인에 실패했습니다.')
       }
     }
-
-    const goToSignUp = () => {
-      router.push({ name: 'SignUpContainer' })
-    }
-
-    const goToPassword = () => {
-      router.push({ name: 'PasswordContainer' })
-    }
-
-    return { username, password, login, goToSignUp, goToPassword }
   }
 }
 </script>
@@ -82,6 +67,7 @@ export default {
 
 .login-button {
   background-color: #2462b9;
+  width: 10vw;
 }
 
 .signup-button {
