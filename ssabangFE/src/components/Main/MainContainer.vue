@@ -599,13 +599,27 @@ export default {
         const formattedPrice =
           ((data.amount ? data.amount : data.averagePrice) / 10000).toFixed(2) + '억'
         formattedPrice == NaN ? data.line : formattedPrice
+        const liked = data?.likeCount
         // DOM 요소 직접 생성
+        const markerLiked = '/src/assets/liked.png'
+
         const overlayElement = document.createElement('div')
         overlayElement.className = 'overlay-info'
-        overlayElement.innerHTML = `
+        if (liked != undefined) {
+          overlayElement.innerHTML = `
       <div class="overlay-number">${name}</div>
       <div class="overlay-number">${formattedPrice}</div>
-    `
+      <div class="overlay-number" style="display:flex; align-items:center; justify-content:center;"><img src="${markerLiked}" alt="Subway Icon" style="width: 24px; height: 24px;">
+${liked}</div>`
+        } else {
+          overlayElement.innerHTML = `
+      <div class="overlay-number">${name}</div>
+      <div class="overlay-number">${formattedPrice}</div>
+      <div class="overlay-number" style="display:flex; align-items:center; justify-content:center;"><img src="${markerLiked}" alt="Subway Icon" style="width: 24px; height: 24px;">
+${liked}</div>`
+        }
+
+        console.log(data)
 
         // 클릭 이벤트 리스너 직접 추가
         if (data.apartmentName)
@@ -867,14 +881,21 @@ export default {
       apartmentData.forEach((data, index) => {
         const position = new kakao.maps.LatLng(data.latitude, data.longitude)
         const formattedPrice = (data.averagePrice / 10000).toFixed(2) + '억'
+        const liked = data?.likeCount
         formattedPrice == NaN ? '' : formattedPrice
         const overlayElement = document.createElement('div')
         data.type = 'APARTMENT'
         data.keyword = data.apartmentName
+        console.log(liked)
+
+        const markerLiked = '/src/assets/liked.png'
+
         overlayElement.className = 'overlay-info'
         overlayElement.innerHTML = `
       <div class="overlay-text">${data.apartmentName}</div>
       <div class="overlay-number">${formattedPrice}</div>
+      <div class="overlay-number"><img src="${markerLiked}" alt="Subway Icon" style="width: 24px; height: 24px;">
+${liked}</div>
     `
         const overlay = new kakao.maps.CustomOverlay({
           map: this.map,
