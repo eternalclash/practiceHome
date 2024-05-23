@@ -615,11 +615,10 @@ ${liked}</div>`
           overlayElement.innerHTML = `
       <div class="overlay-number">${name}</div>
       <div class="overlay-number">${formattedPrice}</div>
-      <div class="overlay-number" style="display:flex; align-items:center; justify-content:center;"><img src="${markerLiked}" alt="Subway Icon" style="width: 24px; height: 24px;">
-${liked}</div>`
+    `
         }
 
-        console.log(data)
+        // console.log(data)
 
         // 클릭 이벤트 리스너 직접 추가
         if (data.apartmentName)
@@ -657,9 +656,9 @@ ${liked}</div>`
         // 지도의 현재 레벨에 따라 적절한 API 호출
         const useDong = this.map.getLevel() < 7
         const markersData = useDong ? this.dongMarkers : this.guMarkers
-        console.log(this.dongMarkers)
-        console.log(this.guMarkers)
-        console.log('DDDDONG' + markersData)
+        // console.log(this.dongMarkers)
+        // console.log(this.guMarkers)
+        // console.log('DDDDONG' + markersData)
         this.displayMarkers(markersData)
       }
     },
@@ -745,10 +744,13 @@ ${liked}</div>`
       try {
         this.dongChangInfo = []
         if (deal.type == 'APARTMENT' || deal.apartmentName || deal.buildingName) {
+          console.log(deal)
           this.infomation = await getApartmentData(
             deal?.keyword || deal?.apartmentName || deal?.buildingName,
             deal?.dongName
           )
+          console.log(deal)
+          console.log(this.infomation)
           if (this.infomation.address) {
             this.articles = await getNews(this.infomation.address.split(' ')[2])
           }
@@ -763,7 +765,7 @@ ${liked}</div>`
             this.lng = this.infomation.longitude
             this.updateMarkers()
           }
-          console.log(this.infomation)
+          // console.log(this.infomation)
           this.infomation.isLiked = this.checkZzim(this.infomation.apartmentName)
           this.subway = await getSubwayNear(this.infomation.latitude, this.infomation.longitude)
           this.subway.distance = this.calculateDistance(
@@ -840,7 +842,7 @@ ${liked}</div>`
         if (this.infomation.threeYear != undefined) {
           returnData = calculateHalfAverage(this.infomation.threeYear, this.tempArea)
           if (returnData[1] != []) {
-            console.log('returnData', returnData)
+            // console.log('returnData', returnData)
             this.chartData = returnData[0]
             this.tempDeal = returnData[1]
             this.chartData.unshift(['Month', '실거래가'])
@@ -886,7 +888,7 @@ ${liked}</div>`
         const overlayElement = document.createElement('div')
         data.type = 'APARTMENT'
         data.keyword = data.apartmentName
-        console.log(liked)
+        // console.log(liked)
 
         const markerLiked = '/src/assets/liked.png'
 
@@ -968,7 +970,7 @@ ${liked}</div>
       }
 
       const zzimList = await getZzim()
-      console.log(zzimList.some((z) => z.buildingName == buildingName))
+      // console.log(zzimList.some((z) => z.buildingName == buildingName))
       if (zzimList && Array.isArray(zzimList)) {
         console.log('S')
         this.zzimCheck = zzimList.some((z) => z.buildingName == buildingName)
@@ -984,6 +986,11 @@ ${liked}</div>
       }
 
       await postZzim(buildingName, dongName)
+      const deal = {}
+      deal.apartmentName = buildingName
+      deal.type = 'APARTMENT'
+      deal.dongName = dongName
+      this.handleApartment(deal)
       alert('찜 목록에 추가되었습니다.')
       this.zzimCheck = true
       await this.getZzim() // Update the zzim list displayed
@@ -997,11 +1004,16 @@ ${liked}</div>
         this.zzimCheck = false
         await postZzim(buildingName, dongName)
         await this.getZzim()
+        const deal = {}
+        deal.apartmentName = buildingName
+        deal.type = 'APARTMENT'
+        deal.dongName = dongName
+        this.handleApartment(deal)
       }
     },
     async getZzim() {
       const zzimList = await getZzim()
-      console.log(zzimList)
+      // console.log(zzimList)
       if (!localStorage.getItem('access')) {
         this.zzimList = []
         return

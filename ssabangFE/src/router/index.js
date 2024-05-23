@@ -8,11 +8,12 @@ import AskDetailContainer from '@/components/Ask/AskDetailContainer.vue'
 import AskInputContainer from '@/components/Ask/AskInputContainer.vue'
 import ModifyPasswordContainer from '@/components/Login/ModifyPasswordContainer.vue'
 import PasswordContainer from '@/components/Login/PasswordContainer.vue'
-
+import PopupContainer from '@/components/Main/PopupContainer.vue'
 const routes = [
   {
     path: '/',
     name: 'MainContainer',
+
     component: MainContainer
   },
   {
@@ -29,6 +30,11 @@ const routes = [
     path: '/realestate',
     name: 'RealEstateList',
     component: RealEstateList
+  },
+  {
+    path: '/popup',
+    name: 'PopupConatiner',
+    component: PopupContainer
   },
   {
     path: '/ask',
@@ -61,5 +67,16 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  const hasVisited = localStorage.getItem('hasVisited');
+
+  if (!hasVisited && to.path !== '/popup') {
+    localStorage.setItem('hasVisited', 'true');
+    next('/popup');
+  } else {
+    next();
+  }
+});
 
 export default router
